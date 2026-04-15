@@ -1411,7 +1411,7 @@ function renderGraph(){
     plbl.textContent = locked ? `Locked · ${PRIORITY_LABEL[task.priority]}` : `${done}/${total} · ${PRIORITY_LABEL[task.priority]}`;
     g.appendChild(plbl);
 
-    if(locked) g.classList.add(hideLocked ? 'g-hidden-locked' : 'g-locked');
+    if(locked) g.classList.add(hideLocked ? 'g-locked' : 'g-hidden-locked');
 
     g.addEventListener('click',()=>{ if(!hideLocked || !locked) openPanel(task.id); });
     g.addEventListener('mouseenter',()=>highlightEdges(task.id, true));
