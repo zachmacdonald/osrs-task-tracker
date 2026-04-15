@@ -333,7 +333,7 @@ header .spacer{flex:1}
   <button class="filter-btn" onclick="setFilter('nice',this)">🟠 Optional</button>
   <button class="filter-btn" onclick="setFilter('incomplete',this)">Incomplete</button>
   <button class="filter-btn" onclick="setFilter('complete',this)">Complete</button>
-  <button class="hide-locked-btn active" id="hide-locked-btn" onclick="toggleHideLocked(this)">👁 Show Locked</button>
+  <button class="hide-locked-btn active" id="hide-locked-btn" onclick="toggleHideLocked(this)">Show Locked</button>
 </div>
 
 <div class="divider">— Tasks —</div>
@@ -950,7 +950,7 @@ function manualUnlock(taskId, e){
 function toggleHideLocked(btn){
   hideLocked = !hideLocked;
   btn.classList.toggle('active', hideLocked);
-  btn.textContent = hideLocked ? '🔒 Hide Locked' : '👁 Show Locked';
+  btn.textContent = hideLocked ? 'Show Locked' : 'Hide Locked';
   try{localStorage.setItem('osrs_hidelocked_v2',JSON.stringify(hideLocked));}catch(e){}
   renderCards();
   if(currentView==='graph') renderGraph();
@@ -1143,8 +1143,8 @@ function buildCard(task){
   card.className = `task-card priority-${task.priority}${complete?' completed-card':''}${locked?' locked':''}`;
   card.id = 'card_'+task.id;
 
-  if(locked){
-    // Locked card: show blurred shell + unlock overlay
+  if(locked && hideLocked){
+    // Blurred but visible — show title and priority, overlay with unlock option
     const incompletePrereqs = prereqs.filter(pt=>!isCardComplete(pt)).map(pt=>pt.title);
     card.innerHTML = `
       <div class="card-priority-bar"></div>
@@ -1162,6 +1162,11 @@ function buildCard(task){
       </div>
     `;
     return card;
+  }
+
+  if(locked && !hideLocked){
+    // Fully shown — render normally but no checkboxes (can't interact)
+    card.classList.remove('locked');
   }
 
   const subtasksHtml = task.subtasks.map(st=>{
@@ -1219,14 +1224,12 @@ function buildCard(task){
 function renderCards(){
   const container = document.getElementById('cards-container');
   container.innerHTML='';
-  // restore hide-locked button state
   const hlBtn = document.getElementById('hide-locked-btn');
   if(hlBtn){
     hlBtn.classList.toggle('active', hideLocked);
-    hlBtn.textContent = hideLocked ? '🔒 Hide Locked' : '👁 Show Locked';
+    hlBtn.textContent = hideLocked ? 'Show Locked' : 'Hide Locked';
   }
   const filtered = TASKS.filter(t=>{
-    if(hideLocked && isLocked(t)) return false;
     if(currentFilter==='must') return t.priority==='must';
     if(currentFilter==='should') return t.priority==='should';
     if(currentFilter==='nice') return t.priority==='nice';
