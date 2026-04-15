@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>OSRS Group Task Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#c8a84b;
+  --gold-light:#e8c96a;
+  --gold-dark:#8a6e2a;
+  --parchment:#f5edd5;
+  --parchment-dark:#e8d9b0;
+  --stone:#2a2418;
+  --stone-mid:#3d3220;
+  --stone-light:#5a4a2e;
+  --stone-card:#241e12;
+  --text-main:#f0e6c8;
+  --text-muted:#a89060;
+  --text-dim:#6b5535;
+  --green:#4a8c3f;
+  --green-light:#6abf5e;
+  --yellow:#c8a020;
+  --orange:#c86020;
+  --red:#9b2020;
+  --blue:#3a6a9b;
+  --blue-light:#5a8abf;
+  --radius:6px;
+  --priority-must:#4a8c3f;
+  --priority-should:#c8a020;
+  --priority-nice:#c86020;
+}
+body{
+  background:var(--stone);
+  color:var(--text-main);
+  font-family:'Crimson Pro',Georgia,serif;
+  font-size:17px;
+  min-height:100vh;
+  background-image:
+    radial-gradient(ellipse at 20% 0%,rgba(200,168,75,0.07) 0%,transparent 60%),
+    radial-gradient(ellipse at 80% 100%,rgba(90,74,46,0.3) 0%,transparent 60%),
+    repeating-linear-gradient(0deg,transparent,transparent 40px,rgba(0,0,0,0.03) 40px,rgba(0,0,0,0.03) 41px);
+}
+
+/* ── HEADER ── */
+header{
+  background:linear-gradient(180deg,#1a1208 0%,#241e12 100%);
+  border-bottom:2px solid var(--gold-dark);
+  padding:18px 28px 14px;
+  display:flex;align-items:center;gap:16px;
+  position:sticky;top:0;z-index:100;
+  box-shadow:0 4px 20px rgba(0,0,0,0.6);
+}
+header .logo{font-family:'Cinzel',serif;font-size:22px;color:var(--gold);letter-spacing:1px;line-height:1.1}
+header .logo span{display:block;font-size:12px;color:var(--text-muted);font-family:'Crimson Pro',serif;letter-spacing:3px;text-transform:uppercase;font-weight:300}
+header .spacer{flex:1}
+.view-btn{
+  background:none;border:1px solid var(--stone-light);color:var(--text-muted);
+  padding:6px 16px;border-radius:var(--radius);cursor:pointer;font-family:'Crimson Pro',serif;font-size:14px;
+  transition:all .2s;
+}
+.view-btn:hover,.view-btn.active{background:var(--stone-mid);border-color:var(--gold-dark);color:var(--gold)}
+
+/* ── INTRO BANNER ── */
+.intro{
+  background:linear-gradient(135deg,rgba(36,30,18,0.95),rgba(36,26,10,0.9));
+  border:1px solid var(--gold-dark);border-radius:var(--radius);
+  margin:20px 24px 8px;padding:18px 22px;
+  font-style:italic;color:var(--text-muted);font-size:15px;line-height:1.7;
+  position:relative;
+}
+.intro::before{content:'★';position:absolute;top:-10px;left:20px;background:var(--stone);padding:0 6px;color:var(--gold);font-size:16px}
+
+/* ── PROGRESS BAR ── */
+.progress-bar-wrap{
+  margin:0 24px 16px;
+  background:var(--stone-card);border:1px solid var(--stone-light);border-radius:var(--radius);
+  padding:12px 18px;display:flex;align-items:center;gap:14px;
+}
+.progress-bar-outer{flex:1;background:var(--stone-mid);border-radius:3px;height:8px;overflow:hidden}
+.progress-bar-inner{height:100%;background:linear-gradient(90deg,var(--green),var(--gold));border-radius:3px;transition:width .5s ease}
+.progress-label{font-size:13px;color:var(--text-muted);white-space:nowrap}
+.progress-count{font-size:15px;color:var(--gold);font-weight:600;min-width:60px;text-align:right}
+
+/* ── LEGEND ── */
+.legend{
+  display:flex;gap:18px;padding:0 24px 14px;flex-wrap:wrap;align-items:center;
+}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted)}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+
+/* ── FILTERS ── */
+.filters{display:flex;gap:8px;padding:0 24px 16px;flex-wrap:wrap}
+.filter-btn{
+  background:none;border:1px solid var(--stone-light);color:var(--text-muted);
+  padding:4px 14px;border-radius:20px;cursor:pointer;font-family:'Crimson Pro',serif;font-size:14px;transition:all .2s;
+}
+.filter-btn:hover{border-color:var(--gold-dark);color:var(--text-main)}
+.filter-btn.active{background:var(--stone-mid);border-color:var(--gold-dark);color:var(--gold)}
+
+/* ── CARDS GRID ── */
+.cards-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
+  gap:16px;padding:0 24px 40px;
+}
+
+/* ── TASK CARD ── */
+.task-card{
+  background:var(--stone-card);
+  border:1px solid var(--stone-light);
+  border-radius:var(--radius);
+  overflow:hidden;
+  transition:border-color .2s,box-shadow .2s;
+  position:relative;
+}
+.task-card:hover{border-color:var(--gold-dark);box-shadow:0 4px 20px rgba(0,0,0,0.4)}
+.task-card.completed-card{opacity:.6}
+
+.card-priority-bar{height:3px}
+.priority-must .card-priority-bar{background:var(--green)}
+.priority-should .card-priority-bar{background:var(--yellow)}
+.priority-nice .card-priority-bar{background:var(--orange)}
+
+.card-header{
+  padding:14px 16px 10px;
+  display:flex;align-items:flex-start;gap:10px;
+  cursor:pointer;user-select:none;
+}
+.card-check{
+  width:20px;height:20px;border-radius:3px;border:1.5px solid var(--stone-light);
+  flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;cursor:pointer;background:none;
+}
+.card-check:hover{border-color:var(--gold)}
+.card-check.checked{background:var(--green);border-color:var(--green)}
+.card-check.checked::after{content:'✓';color:#fff;font-size:13px;line-height:1}
+
+.card-title-area{flex:1;min-width:0}
+.card-title{
+  font-family:'Cinzel',serif;font-size:14px;color:var(--gold);
+  font-weight:600;letter-spacing:.3px;line-height:1.3;
+}
+.card-title.done{text-decoration:line-through;color:var(--text-dim)}
+.priority-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:11px;padding:2px 8px;border-radius:10px;margin-top:5px;
+  font-family:'Crimson Pro',serif;letter-spacing:.5px;text-transform:uppercase;
+}
+.priority-badge.must{background:rgba(74,140,63,0.2);color:#6abf5e;border:1px solid rgba(74,140,63,0.4)}
+.priority-badge.should{background:rgba(200,160,32,0.2);color:#e8c060;border:1px solid rgba(200,160,32,0.4)}
+.priority-badge.nice{background:rgba(200,96,32,0.2);color:#e8843e;border:1px solid rgba(200,96,32,0.4)}
+
+.card-chevron{
+  color:var(--text-dim);font-size:12px;margin-top:3px;transition:transform .2s;flex-shrink:0;
+}
+.card-chevron.open{transform:rotate(180deg)}
+
+.card-body{display:none;border-top:1px solid rgba(90,74,46,0.3);padding:12px 16px 14px}
+.card-body.open{display:block}
+
+.card-desc{color:var(--text-muted);font-size:15px;line-height:1.6;margin-bottom:12px;font-style:italic}
+
+/* subtasks */
+.subtasks{list-style:none}
+.subtask-item{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:6px 0;border-bottom:1px solid rgba(90,74,46,0.2);
+}
+.subtask-item:last-child{border-bottom:none}
+.subtask-check{
+  width:16px;height:16px;border-radius:2px;border:1.5px solid var(--stone-light);
+  flex-shrink:0;margin-top:3px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;background:none;transition:all .2s;
+}
+.subtask-check:hover{border-color:var(--gold)}
+.subtask-check.checked{background:var(--green);border-color:var(--green)}
+.subtask-check.checked::after{content:'✓';color:#fff;font-size:10px;line-height:1}
+.subtask-text{color:var(--text-main);font-size:15px;line-height:1.5;flex:1}
+.subtask-text.done{text-decoration:line-through;color:var(--text-dim)}
+.subtask-link{color:var(--blue-light);font-size:13px;text-decoration:none}
+.subtask-link:hover{color:var(--gold)}
+
+/* prereqs */
+.prereqs-section{margin-top:10px;padding-top:10px;border-top:1px solid rgba(90,74,46,0.3)}
+.prereqs-label{font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.prereqs-list{display:flex;flex-wrap:wrap;gap:6px}
+.prereq-chip{
+  background:rgba(58,106,155,0.2);border:1px solid rgba(58,106,155,0.5);
+  color:var(--blue-light);border-radius:3px;padding:2px 10px;font-size:13px;cursor:pointer;
+  transition:all .2s;
+}
+.prereq-chip:hover{background:rgba(58,106,155,0.35);color:#fff}
+.prereq-chip.satisfied{background:rgba(74,140,63,0.2);border-color:rgba(74,140,63,0.4);color:var(--green-light)}
+
+/* subtask progress */
+.subtask-progress{font-size:12px;color:var(--text-dim);margin-top:4px}
+.sub-prog-bar{background:var(--stone-mid);border-radius:2px;height:3px;margin-top:4px;overflow:hidden}
+.sub-prog-fill{height:100%;background:var(--green);border-radius:2px;transition:width .3s}
+
+/* ── GRAPH VIEW ── */
+#graph-view{padding:20px 24px 40px;display:none}
+#graph-view.active{display:block}
+.graph-container{
+  background:var(--stone-card);border:1px solid var(--stone-light);border-radius:var(--radius);
+  overflow:auto;position:relative;
+}
+#graph-svg{display:block}
+
+.g-node{cursor:pointer}
+.g-node rect{
+  fill:#2a2010;stroke:var(--stone-light);stroke-width:1;rx:4;
+  transition:stroke .2s,fill .2s;
+}
+.g-node:hover rect{stroke:var(--gold-dark);fill:#332818}
+.g-node.selected rect{stroke:var(--gold);stroke-width:1.5;fill:#332818}
+.g-node.completed rect{fill:#1a2a18;stroke:var(--green)}
+.g-node text{fill:var(--text-muted);font-family:'Crimson Pro',serif;font-size:12px;pointer-events:none}
+.g-node .g-title{fill:var(--gold);font-size:13px;font-family:'Cinzel',serif}
+.g-node .g-priority{font-size:10px}
+.g-edge{stroke:rgba(90,74,46,0.5);stroke-width:1.5;fill:none;marker-end:url(#arrow)}
+.g-edge.highlighted{stroke:var(--gold-dark);stroke-width:2}
+
+/* ── DETAIL PANEL ── */
+#detail-panel{
+  position:fixed;right:0;top:0;bottom:0;width:360px;
+  background:linear-gradient(180deg,#1e1810 0%,var(--stone-card) 100%);
+  border-left:1px solid var(--gold-dark);
+  transform:translateX(100%);transition:transform .3s;
+  overflow-y:auto;z-index:200;
+  box-shadow:-8px 0 30px rgba(0,0,0,0.5);
+}
+#detail-panel.open{transform:translateX(0)}
+.panel-close{
+  position:absolute;top:14px;right:16px;
+  background:none;border:none;color:var(--text-dim);font-size:20px;cursor:pointer;
+  line-height:1;transition:color .2s;
+}
+.panel-close:hover{color:var(--gold)}
+.panel-inner{padding:20px 20px 40px}
+.panel-title{font-family:'Cinzel',serif;font-size:18px;color:var(--gold);margin-bottom:4px;line-height:1.3;padding-right:30px}
+.panel-badge{margin-bottom:14px}
+.panel-desc{color:var(--text-muted);font-style:italic;font-size:15px;line-height:1.7;margin-bottom:16px}
+.panel-section{margin-bottom:16px}
+.panel-section-title{font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid rgba(90,74,46,0.3);padding-bottom:4px}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--stone-card)}
+::-webkit-scrollbar-thumb{background:var(--stone-light);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--gold-dark)}
+
+/* ── DIVIDER ── */
+.divider{
+  text-align:center;padding:6px 24px 16px;
+  font-family:'Cinzel',serif;font-size:11px;color:var(--text-dim);letter-spacing:3px;
+}
+
+/* completed overlay */
+.card-done-overlay{
+  position:absolute;top:8px;right:8px;
+  background:rgba(74,140,63,0.2);border:1px solid rgba(74,140,63,0.5);
+  border-radius:3px;padding:2px 8px;font-size:11px;color:var(--green-light);
+  font-family:'Cinzel',serif;letter-spacing:.5px;
+  pointer-events:none;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    ⚔ OSRS Group Tracker
+    <span>Guild Progress Board</span>
+  </div>
+  <div class="spacer"></div>
+  <button class="view-btn active" id="btn-cards" onclick="setView('cards')">Cards</button>
+  <button class="view-btn" id="btn-graph" onclick="setView('graph')">Graph</button>
+</header>
+
+<div class="intro">
+  Since we've killed Scurrius and most folks have gotten their dragon scim/defenders, we can start looking towards the next group goal — completing Moons of Peril bosses. Here's a roadmap of things to do along the way. Choose whatever interests you! Most are not mandatory but will help progress your accounts. Don't feel overwhelmed, just take on one at a time. 🗡️
+</div>
+
+<div class="progress-bar-wrap">
+  <span class="progress-label">Overall Progress</span>
+  <div class="progress-bar-outer"><div class="progress-bar-inner" id="main-prog-bar" style="width:0%"></div></div>
+  <span class="progress-count" id="main-prog-label">0 / 0</span>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Priority — do this</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--yellow)"></div>Should do at some point</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div>Nice to have</div>
+</div>
+
+<div class="filters">
+  <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+  <button class="filter-btn" onclick="setFilter('must',this)">🟢 Priority</button>
+  <button class="filter-btn" onclick="setFilter('should',this)">🟡 Should Do</button>
+  <button class="filter-btn" onclick="setFilter('nice',this)">🟠 Optional</button>
+  <button class="filter-btn" onclick="setFilter('incomplete',this)">Incomplete</button>
+  <button class="filter-btn" onclick="setFilter('complete',this)">Complete</button>
+</div>
+
+<div class="divider">— Tasks —</div>
+
+<div class="cards-grid" id="cards-container"></div>
+
+<div id="graph-view">
+  <div class="graph-container">
+    <svg id="graph-svg" width="1200" height="900"></svg>
+  </div>
+</div>
+
+<div id="detail-panel">
+  <button class="panel-close" onclick="closePanel()">✕</button>
+  <div class="panel-inner" id="panel-content"></div>
+</div>
+
+<script>
+// isSkillNode = true means it shows as a skill requirement node (different styling)
+const TASKS = [
+  // ── SKILL NODES ──
+  {
+    id:'skill_combat',
+    title:'75 Combat Level',
+    priority:'must',
+    prereqIds:[],
+    isSkillNode:true,
+    description:'75 Combat is required to use Konar quo Maten as your Slayer master. Combat level is determined by your Attack, Strength, Defence, Hitpoints, Prayer, and Ranged/Magic levels. Getting here naturally through questing and early bossing is the way to go.',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Combat_level',
+    subtasks:[
+      {id:'cb_quests',text:'Free XP from quests gets you most of the way: Waterfall Quest, Tree Gnome Village, Fight Arena, Vampire Slayer give thousands of Attack/Strength XP for free'},
+      {id:'cb_slayer',text:'Slayer training naturally raises combat — every task gives combat XP on top of Slayer XP'},
+      {id:'cb_75',text:'Reach 75 Combat to unlock Konar quo Maten as your Slayer master'},
+    ]
+  },
+  {
+    id:'skill_slayer',
+    title:'Slayer to 48',
+    priority:'must',
+    prereqIds:['skill_combat'],
+    isSkillNode:true,
+    description:'48 Slayer is the minimum requirement to access Moons of Peril. Konar should already be unlocked well before this point. Use the Turael 9-task method to rack up points fast while training.',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Ironman_Guide/Slayer',
+    subtasks:[
+      {id:'sl_konar',text:'Konar is already unlocked — use her as your main master for Brimstone Keys and bonus Slayer points'},
+      {id:'sl_tureal',text:'Turael skip method: do 9 tasks with Turael in Burthorpe (fast tasks, light gear), then your 10th with Konar for the streak bonus points'},
+      {id:'sl_melee',text:'Use melee + Proselyte armour for longer tasks; safespot with magic for hellhounds, greater demons, and dragons'},
+      {id:'sl_points',text:'Slayer points priority: first build a good block list (block bad tasks via Turael), unlock superior slayer monsters, then work toward the Slayer Helmet — that\'s what the points are for'},
+      {id:'sl_48',text:'Reach 48 Slayer — this is the hard requirement to unlock Moons of Peril'},
+    ]
+  },
+  {
+    id:'skill_herblore',
+    title:'Herblore to 38–55',
+    priority:'should',
+    prereqIds:[],
+    isSkillNode:true,
+    description:'38 Herblore lets you make Moonlight Potions inside Neypotzli. 55 is a great longer-term goal. As an ironman this is one of the hardest skills — ALWAYS put lamp/book XP into Herblore.',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Ironman_Guide/Herblore',
+    subtasks:[
+      {id:'herb_druidic',text:'Complete Druidic Ritual to unlock the skill, then Jungle Potion + Recruitment Drive — these alone get you to ~level 13 with no potions made'},
+      {id:'herb_lamps',text:'ALWAYS put Lamps, Books of Knowledge, and quest XP rewards into Herblore — this is the single most impactful thing you can do'},
+      {id:'herb_legends_xp',text:"Legend's Quest gives a massive Herblore XP reward — one of the best in the game. Prioritise this quest"},
+      {id:'herb_wintertodt',text:'Early on: get starting supplies from Wintertodt drops, or kill Chaos Druids/Flesh Crawlers for low-level herb drops'},
+      {id:'herb_farming_loop',text:'Mid-game: herb runs are your primary source. Clean herbs while running to the next patch to save time. Always use Ultracompost'},
+      {id:'herb_mixology',text:'At 60 Herblore + Children of the Sun quest: Mastering Mixology in Aldarin gives 4x more XP per herb than potion-making and needs no secondary ingredients — do this'},
+      {id:'herb_38',text:'Reach 38 Herblore to make Moonlight Potions inside Neypotzli (required for Moons of Peril)'},
+    ]
+  },
+  {
+    id:'skill_farming',
+    title:'Farming Runs',
+    priority:'should',
+    prereqIds:[],
+    isSkillNode:true,
+    description:'Farming is the backbone of ironman Herblore. Herbs come from your patches. Seeds come from Slayer tasks, Farming Contracts, and birdhouse runs. Set up a daily routine and stick to it.',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Ironman_Guide/Farming',
+    subtasks:[
+      {id:'farm_quests',text:'Complete quest skips early: Fairy Tale I (Growing Pains), Garden of Death, Garden of Tranquillity, Forgettable Tale — these collectively get you to ~37 Farming for free'},
+      {id:'farm_tithe',text:'Do Tithe Farm for the Auto Weed and Herb Sack unlocks (150 points each) — both massively improve your farming efficiency'},
+      {id:'farm_guild',text:'At 45 Farming: unlock the Farming Guild and do Farming Contracts daily — this is your most consistent source of seeds including tree seeds'},
+      {id:'farm_birdhouse',text:'Do birdhouse runs on Fossil Island (every ~50 min) for tree seeds and Hunter XP passively — requires Bone Voyage quest'},
+      {id:'farm_herbs',text:'Do herb runs whenever you can sneak them in — herbs take 80 minutes to grow so fit them around whatever else you\'re doing. No need to be religious about it'},
+      {id:'farm_trees',text:'Tree/Fruit Tree/Hardwood Tree runs give the best Farming XP by far — do these alongside herb runs when you have seeds from contracts'},
+      {id:'farm_watermelons',text:'At 47 Farming: grow Watermelons in allotment patches and bin them for Supercompost (big bin in Farming Guild) — sustainable compost source'},
+    ]
+  },
+  {
+    id:'skill_agility',
+    title:'Agility Training',
+    priority:'should',
+    prereqIds:[],
+    isSkillNode:true,
+    description:'Agility comes up as a requirement constantly — 13 for Lost Tribe, 25 for Grand Tree, 50 for Rogues\' Den, 50 for Legends\' Quest. Tourist Trap is a massive shortcut. Rooftop courses give marks of grace for graceful outfit (very valuable).',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Agility_training',
+    subtasks:[
+      {id:'agi_tourist',text:'Tourist Trap quest: uses 2 XP lamps on Agility — each gives XP equal to twice your Agility level. Do this early for free levels. Only requires 10 Fletching (make headless arrows) and Doric\'s Quest for the smithing section'},
+      {id:'agi_draynor',text:'Draynor Rooftop Course (level 1): good early XP + marks of grace. Get to at least 20 here before moving on'},
+      {id:'agi_alkharid',text:'Al Kharid Rooftop Course (level 20): continue here to 30 for Lost Tribe / early quest reqs'},
+      {id:'agi_varrock',text:'Varrock Rooftop Course (level 30): train to 40 here. Marks of grace continue accumulating for Graceful outfit'},
+      {id:'agi_canifis',text:'Canifis Rooftop Course (level 40, requires Priest in Peril): best marks of grace per hour — train here toward 50+ for Rogues\' Den + Legends\' Quest'},
+      {id:'agi_graceful',text:'Graceful outfit (260 marks of grace total): massive QoL upgrade — reduces weight and restores run energy faster. Priority purchase from the Mark of Grace shop in Rogues\' Den'},
+      {id:'agi_50',text:'Reach 50 Agility — required for Rogues\' Den (Thieving money making) and Legends\' Quest'},
+    ]
+  },
+  {
+    id:'skill_crafting',
+    title:'Crafting Training',
+    priority:'should',
+    prereqIds:[],
+    isSkillNode:true,
+    description:'Crafting is needed for Legends\' Quest (50). For ironmen at our stage, the best early methods are making glass (buy sand + soda ash, use a furnace) and crafting jewellery for teleport items. Quests cover a lot of the early levels.',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Crafting_training',
+    subtasks:[
+      {id:'craft_quests',text:'Quests first: Sheep Shearer, Goblin Diplomacy and others give free early Crafting XP — check the wiki for a full list of quest XP rewards'},
+      {id:'craft_glass',text:'Best early method: buy Buckets of Sand and Soda Ash (from charter ships or shops), use a furnace to make molten glass, then blow it into glass items. Good XP and the materials are easy to source as an ironman'},
+      {id:'craft_jewellery',text:'Craft jewellery from gold/silver bars + gems for teleport items you actually need — amulets of glory, rings of dueling, etc. Kills two birds by giving you useful gear'},
+      {id:'craft_gems',text:'Cut gems from Slayer task drops (sapphires, rubies, diamonds) for passive Crafting XP — do this on any gem-dropping task'},
+      {id:'craft_bolts',text:'Once you have the levels, craft bolt tips from gems and attach to bolt shafts for enchanted bolts — useful for bossing and more Crafting XP'},
+      {id:'craft_50',text:'Reach 50 Crafting — required for Legends\' Quest'},
+    ]
+  },
+  {
+    id:'skill_fishing',
+    title:'Fishing & Food Supply',
+    priority:'should',
+    prereqIds:[],
+    isSkillNode:true,
+    description:'As an ironman, you need to source your own food. Karambwans are the best in slot — AFK to fish, fast to eat (no delay means you can combo eat). Tempoross is excellent for early fishing XP and supplies.',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Ironman_Guide/Fishing',
+    subtasks:[
+      {id:'fish_early',text:'Early food: buy raw sardines from Gerrant in Port Sarim and cook them. Fish and cook trout/salmon at Barbarian Village until 35+ Fishing'},
+      {id:'fish_tempoross',text:'Tempoross (35 Fishing): excellent AFK boss that gives fishing XP and reward chests with fish, seeds, and supplies. Good to farm to 65+ Fishing'},
+      {id:'fish_cook',text:'Cook all your fish — Cooking is trained naturally alongside Fishing. Level Cooking to at least 74 to stop burning sharks, or use the Hosidius kitchen (5% reduced burn chance)'},
+      {id:'fish_tai',text:'Complete Tai Bwo Wannai Trio quest: required to fish Karambwans. One of the best investments for ironman food supply'},
+      {id:'fish_karambwan',text:'Karambwans (65 Fishing, Tai Bwo Wannai Trio): the best ironman food — completely AFK to fish on Karamja, and they\'re a "fast food" meaning you can eat one immediately after another in the same tick. Stack with sharks for combo eating in tough fights'},
+      {id:'fish_65',text:'Reach 65 Fishing to unlock Karambwan fishing — a quality of life milestone that effectively solves your food supply for most content'},
+    ]
+  },
+  {
+    id:'skill_mining',
+    title:'Mining Training',
+    priority:'should',
+    prereqIds:[],
+    isSkillNode:true,
+    description:'52 Mining is required for Legends\' Quest (boostable from 50). Train naturally through quest rewards and iron ore — don\'t go out of your way for this one, it comes on its own.',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Mining_training',
+    subtasks:[
+      {id:'mine_quests',text:'Free XP first: Plague City, Doric\'s Quest, and The Lost Tribe all give Mining XP — do these before touching a pickaxe'},
+      {id:'mine_pickaxe',text:'Pickaxe upgrades: Steel (6) → Mithril (21, buy from Dwarven Mine shop under Falador) → Rune (obtained from completing Between a Rock... quest — much better than grinding to 41)'},
+      {id:'mine_mlm',text:'Motherlode Mine (30 Mining): great AFK training method. Rewards include the Gem Bag and Coal Bag (very useful) and the Prospector outfit (Mining XP bonus + Falador Diary requirement for the helmet)'},
+      {id:'mine_mlm_upstairs',text:'If spending a lot of time in Motherlode Mine, unlock the upper floor (requires 72 Mining) and the upper hopper for faster ore collection — worth it for longer sessions'},
+      {id:'mine_52',text:'Reach 52 Mining for Legends\' Quest — boostable with a Mining Potion (+2) from 50. You\'ll likely hit this naturally through quests + Motherlode Mine'},
+    ]
+  },
+  {
+    id:'skill_smithing',
+    title:'Smithing to 55+',
+    prereqIds:[],
+    isSkillNode:true,
+    description:'55 Smithing is required for the Defender of Varrock quest (Zombie Axe chain). The Giant\'s Foundry minigame is the recommended ironman method — it\'s profitable and engaging.',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Giant%27s_Foundry',
+    subtasks:[
+      {id:'smith_foundry',text:"Train Smithing via Giant's Foundry minigame in Kovac's Forge (northwest of the Grand Exchange). Check the wiki for the best alloy combo for your level — generally mithril+ bars"},
+      {id:'smith_profit',text:"You can buy two-handed swords from shops and smelt them down for bars, or use Blast Furnace bars. The minigame is generally profitable so you'll make GP while levelling"},
+      {id:'smith_55',text:'Reach 55 Smithing — hard requirement for the Defender of Varrock quest'},
+      {id:'smith_75',text:'75 Smithing (boostable) is needed to repair the Broken Zombie Axe — only ONE person in the group needs to do this, so coordinate. Dwarven Stout (m) gives +5 boost'},
+    ]
+  },
+  {
+    id:'skill_hunter',
+    title:'Hunter to 52',
+    priority:'must',
+    prereqIds:['bone_voyage'],
+    isSkillNode:true,
+    description:'52 Hunter is required for the Defender of Varrock quest. Birdhouse runs are the most efficient passive method. Hunter Rumours are excellent active XP from 46 onward.',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Ironman_Guide/Hunter',
+    subtasks:[
+      {id:'hunt_birdhouse',text:'Set up birdhouse runs on Fossil Island ASAP (requires Bone Voyage). Do a run every ~50 minutes for passive Hunter XP and tree seeds — magic log birdhouses average 9 nests per run'},
+      {id:'hunt_early',text:'Early levels (1–9): catch Copper Longtails in Piscatoris. (9–15): Ruby Harvests in Piscatoris. (15–29): Swamp Lizards. (29–43): Falconry at Piscatoris Falconry Area (fastest to 43)'},
+      {id:'hunt_rumors',text:'From 46: do Hunter Rumours from Varrock (Huntmaster Cervantes) — best active XP method per hour and very engaging content'},
+      {id:'hunt_52',text:'Reach 52 Hunter — required for Defender of Varrock quest'},
+    ]
+  },
+
+  {
+    id:'bone_voyage',
+    title:'Bone Voyage Quest',
+    priority:'must',
+    prereqIds:[],
+    description:'Unlocks Fossil Island — required for birdhouse runs (passive Hunter XP + tree seeds) and the Volcanic Mine. Short quest, big payoff. Requires completion of The Dig Site first.',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Bone_Voyage',
+    subtasks:[
+      {id:'bv_digsite',text:'Complete The Dig Site quest first — direct prerequisite for Bone Voyage. Requires 10 Agility, 10 Herblore, 10 Thieving'},
+      {id:'bv_complete',text:'Complete Bone Voyage — talk to Curator Haig Halen in Varrock Museum, gather 100 kudos, and board the barge'},
+      {id:'bv_kudos',text:'Earn 100 Kudos if you haven\'t already: complete Natural History Quiz questions in the museum basement, hand in fossils, or do quests that give museum kudos'},
+      {id:'bv_birdhouses',text:'Immediately set up birdhouse runs on Fossil Island — this is why you\'re here. Birdhouses give passive Hunter XP + bird nests (tree seeds) every ~50 minutes'},
+    ]
+  },
+  {
+    id:'barrows',
+    title:'Barrows Brothers',
+    priority:'must',
+    prereqIds:[],
+    description:'Farmable boss with great gear rewards and runes. The main goal here is farming melee armour sets (Torag/Guthan/Dharok body + legs + helm) for Moons of Peril, where tank gear is essential.',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Barrows',
+    subtasks:[
+      {id:'barrows_magic',text:'Recommended: 60+ Magic minimum. Higher is better for accuracy against Ahrim'},
+      {id:'barrows_gauntlets',text:'Recommended: Chaos Gauntlets from Family Crest quest for boosted bolt spell damage'},
+      {id:'barrows_mystic',text:'Optional: Mystic top and bottom (~200k) gives a solid magic setup'},
+      {id:'barrows_ahrim',text:'Have a plan for Ahrim the Blighted (mage brother): Dragon Dagger spec to burst him down, or a solid Ranged setup to safe-range him'},
+      {id:'barrows_cloak',text:'Recommended: God Cloak from Mage Arena 1 for +10 magic attack bonus — free and easy to get'},
+      {id:'barrows_shades',text:'Optional: Complete Shades of Morton for Mort\'ton teleport — convenient access to Barrows'},
+      {id:'barrows_armour',text:'Farm Barrows melee armour sets for Moons of Peril — Torag or Guthan pieces are ideal tank sets. Kristen already has a chest to borrow'},
+    ]
+  },
+  {
+    id:'dks',
+    title:'Dagannoth Kings',
+    priority:'must',
+    prereqIds:[],
+    description:'Three kings, each weak to a different combat style. Can duo or trio with clan. Main target is the Berserker Ring from Rex — one of the best melee rings for a long time. Requires completing The Fremennik Trials and Horror from the Deep.',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Dagannoth_Kings',
+    subtasks:[
+      {id:'dks_fremtrials',text:'Complete The Fremennik Trials — required to access the Waterbirth Island dungeon area'},
+      {id:'dks_horror',text:'Complete Horror from the Deep — required for Waterbirth Island dungeon access. Also a solid Prayer XP reward'},
+      {id:'dks_trio',text:'Can duo or trio these — coordinate with clan for easier kills'},
+      {id:'dks_ring',text:'Main goal: Berserker Ring from Dagannoth Rex (melee boss, weak to magic)'},
+      {id:'dks_axe',text:'Bonus reward: Dragon Axe from Supreme or Prime — great for woodcutting'},
+      {id:'dks_seers',text:'Bonus reward: Seers Ring from Dagannoth Prime (ranged boss)'},
+    ]
+  },
+  {
+    id:'slayer48',
+    title:'Slayer to 48 (Moons Req)',
+    priority:'must',
+    prereqIds:['skill_slayer'],
+    description:'48 Slayer is the hard minimum requirement for Moons of Peril. Konar is already unlocked before this point — use the Turael skip method to stack bonus Slayer points efficiently.',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Moons_of_Peril',
+    subtasks:[
+      {id:'sl48_konar',text:'Use Konar as your main master — her Brimstone Keys have excellent loot and she gives more points than most masters'},
+      {id:'sl48_skip',text:'Turael skip method: do 9 tasks with Turael (Burthorpe, super fast tasks), then take your 10th with Konar for the streak bonus points'},
+      {id:'sl48_done',text:'Reach 48 Slayer — this unlocks access to fight the Moons of Peril'},
+    ]
+  },
+  {
+    id:'rfd',
+    title:'Recipe for Disaster',
+    priority:'must',
+    prereqIds:['legends'],
+    description:"Long-term goal for Barrows Gloves — best-in-slot gloves for most combat styles for a very long time. Requires completing many sub-quests and fighting the Culinaromancer.",
+    wikiUrl:'https://oldschool.runescape.wiki/w/Recipe_for_Disaster',
+    subtasks:[
+      {id:'rfd_start',text:"Start with Cook's Assistant to begin the quest chain"},
+      {id:'rfd_legends_req',text:"Complete Legend's Quest — required for the Awowogei sub-quest"},
+      {id:'rfd_subs',text:'Complete all required sub-quests of Recipe for Disaster (check the wiki for which apply to you)'},
+      {id:'rfd_culinaromancer',text:'Defeat the Culinaromancer final boss to unlock the Culinaromancer\'s Chest'},
+      {id:'rfd_gloves',text:'Purchase Barrows Gloves from the Culinaromancer\'s Chest — these will be your gloves for a very long time'},
+    ]
+  },
+  {
+    id:'ancientmagicks',
+    title:'Unlock Ancient Magicks',
+    priority:'should',
+    prereqIds:[],
+    description:"Desert Treasure I gives access to Ancient Magicks. Blood spells heal you, Ice spells freeze — very strong for bossing and the Fight Caves. Recommended but not a hard requirement for Moons.",
+    wikiUrl:'https://oldschool.runescape.wiki/w/Desert_Treasure_I',
+    subtasks:[
+      {id:'am_dt1',text:'Complete Desert Treasure I — requires 50 Magic, 53 Thieving, 10 Slayer, 50 Firemaking and several other quests'},
+      {id:'am_logs',text:'Need Magic Logs during the quest — you can get them from nature implings, high enough Woodcutting (75), or plant ~200 seeds near the end of the Legends Quest before turning in the totem'},
+      {id:'am_blood',text:'Blood spells (Blood Rush/Blitz/Barrage) heal you for damage dealt — excellent in Fight Caves and bossing'},
+      {id:'am_ice',text:'Ice spells freeze enemies in place — very useful for safe-spotting and DKS/other multi-target situations'},
+    ]
+  },
+  {
+    id:'capes',
+    title:'Fire Cape (Fight Caves)',
+    priority:'must',
+    prereqIds:['ancientmagicks'],
+    description:"One of the most important milestones. The Fire Cape is best-in-slot melee cape for a long time. 63 waves ending with TzTok-Jad. Blood spells from Ancient Magicks help significantly.",
+    wikiUrl:'https://oldschool.runescape.wiki/w/Fight_Cave',
+    subtasks:[
+      {id:'cape_ranged',text:'Recommended: at least 66 Ranged. 70 Ranged unlocks Karil\'s crossbow + armour — a big upgrade for this fight'},
+      {id:'cape_xbow',text:"We'll try to get Hunter's Sunlight Crossbows fletched up for folks — strong budget ranged option"},
+      {id:'cape_pray',text:'Stock up on Prayer Potions. Learn TzTok-Jad\'s attack animations and when to flick Protect from Missiles vs Protect from Magic'},
+      {id:'cape_attempt',text:'Complete the Fight Cave and collect your Fire Cape — wear it with pride'},
+    ]
+  },
+
+
+  {
+    id:'miscellania',
+    title:'Kingdom of Miscellania',
+    priority:'nice',
+    prereqIds:[],
+    description:"Passive income — workers collect herbs and hardwood logs while you play. Needs 750k in the coffer and daily approval upkeep. Worth it once you have the GP to spare.",
+    wikiUrl:'https://oldschool.runescape.wiki/w/Managing_Miscellania',
+    subtasks:[
+      {id:'misc_gp',text:'Save at least 750k–1M GP before setting up (goes into the coffer to pay workers)'},
+      {id:'misc_throne',text:'Complete Throne of Miscellania quest to unlock the kingdom'},
+      {id:'misc_royal',text:'Complete Royal Trouble quest — doubles your worker slots, a big upgrade'},
+      {id:'misc_coffer',text:'Put 750k in the coffer and set all workers to Herblore (herbs) — optionally split some to Hardwood Logs'},
+      {id:'misc_maintain',text:'Keep approval rating near 100% by doing the daily island activity (cutting maple trees or mining coal/gems there)'},
+    ]
+  },
+  {
+    id:'zombie_axe',
+    title:'Zombie Axe',
+    priority:'must',
+    prereqIds:['skill_smithing','skill_hunter'],
+    description:"Best-in-slot slash weapon for our group for a very long time. Requires the Defender of Varrock quest chain, then killing Armoured Zombies for the drop. Huge priority.",
+    wikiUrl:'https://oldschool.runescape.wiki/w/Zombie_axe',
+    subtasks:[
+      {id:'za_attack',text:'Get 65 Attack to wield the finished Zombie Axe'},
+      {id:'za_smithing55',text:"Get 55 Smithing via Giant's Foundry (see skill node) — profitable method"},
+      {id:'za_hunter52',text:'Get 52 Hunter (see skill node) — birdhouse runs passively, Hunter Rumours from 46'},
+      {id:'za_dov',text:"Complete Defender of Varrock quest — has its own lower-level quest prerequisites, 52 Hunter and 55 Smithing are the skill reqs"},
+      {id:'za_kill',text:'Kill Armoured Zombies in the Varrock Sewers for the Broken Zombie Axe drop — zombies also drop tons of herbs'},
+      {id:'za_repair',text:'Repair the Broken Zombie Axe with 75 Smithing (boostable with Dwarven Stout m for +5)'},
+    ]
+  },
+  {
+    id:'blackmask',
+    title:'Black Mask',
+    priority:'must',
+    prereqIds:['slayer48'],
+    description:"Massive damage and accuracy boost against all Slayer task monsters. Priority pickup once you hit 58 Slayer. Also needed to make a Slayer Helmet later.",
+    wikiUrl:'https://oldschool.runescape.wiki/w/Black_mask',
+    subtasks:[
+      {id:'bm_slayer58',text:'Reach 58 Slayer to be assigned Cave Horrors'},
+      {id:'bm_cabin',text:'Complete Cabin Fever quest to access Mos Le\'Harmless island'},
+      {id:'bm_candle',text:'Bring any light source — the cave is dark without one. Also pray Protect from Melee so you don\'t need a Witchwood Icon to reduce damage from Cave Horrors'},
+      {id:'bm_kill',text:'Kill Cave Horrors until the Black Mask drops (1/512 — can take patience)'},
+      {id:'bm_imbue',text:'Recommended: Imbue the Black Mask at the PvP Arena (not NMZ!) to make the Slayer Helm (i) — the imbue is free there via Bounty Hunter points'},
+    ]
+  },
+  {
+    id:'bellesfolly',
+    title:"Belle's Folly",
+    priority:'nice',
+    prereqIds:['slayer48'],
+    description:"Best-in-slot stab weapon for our range and useful for the Eclipse Moon (weak to stab). Not mandatory but a nice upgrade if you meet the requirements.",
+    wikiUrl:'https://oldschool.runescape.wiki/w/Belle%27s_Folly',
+    subtasks:[
+      {id:'bf_slayer48',text:'Need 48 Slayer (already needed for Moons)'},
+      {id:'bf_sailing45',text:'Get 45 Sailing'},
+      {id:'bf_construction48',text:'Get 48 Construction'},
+      {id:'bf_hunter45',text:'Get 45 Hunter'},
+      {id:'bf_quest',text:'Complete Troubled Tortugans quest'},
+      {id:'bf_gryphon',text:'Get a Gryphon Slayer task from Vannaka'},
+      {id:'bf_boss',text:"Kill the Shellbane Gryphon Boss and claim Belle's Folly"},
+    ]
+  },
+  {
+    id:'glacial',
+    title:'Glacial Temotli',
+    priority:'nice',
+    prereqIds:['slayer48'],
+    description:"Dual-wield weapons with strong accuracy — useful for the Blue Moon (weak to crush). Not required, but a nice option if you want to optimise your kit for Moons.",
+    wikiUrl:'https://oldschool.runescape.wiki/w/Glacial_temotli',
+    subtasks:[
+      {id:'gt_slayer48',text:'Need 48 Slayer — required for access to the content'},
+      {id:'gt_quest',text:'Complete The Heart of Darkness quest to unlock access to the Ice Naguas'},
+      {id:'gt_naguas',text:'Kill Ice Naguas and the Amoxital boss as part of the content'},
+      {id:'gt_dual',text:'Obtain both Glacial Temotli weapons for the dual-wield setup'},
+    ]
+  },
+  {
+    id:'toktz',
+    title:'Toktz-ket-xil (Obsidian Shield)',
+    priority:'nice',
+    prereqIds:[],
+    description:"Solid tank shield — obtainable with the Karamja Medium Diary plus 6,500 chaos runes traded at the TzHaar rune shop. Barrows runs naturally generate most of the runes you need.",
+    wikiUrl:'https://oldschool.runescape.wiki/w/Toktz-ket-xil',
+    subtasks:[
+      {id:'toktz_diary',text:'Complete Karamja Medium Diary for access to Mor Ul Rek without needing a fire cape'},
+      {id:'toktz_runes',text:'Collect 6,500 Chaos Runes — Barrows runs will naturally generate most of these'},
+      {id:'toktz_trade',text:'Sell the chaos runes to the TzHaar-Mej-Roh rune shop in Mor Ul Rek for Tokkul'},
+      {id:'toktz_buy',text:'Buy the Toktz-ket-xil shield with your Tokkul'},
+    ]
+  },
+  {
+    id:'legends',
+    title:"Legend's Quest",
+    priority:'must',
+    prereqIds:['skill_herblore','skill_agility','skill_crafting','skill_mining'],
+    description:"One of the most impactful quests in OSRS. Required for RFD (Awowogei subquest) and gives one of the game's biggest Herblore XP rewards. Also opens up the Legends Guild.",
+    wikiUrl:'https://oldschool.runescape.wiki/w/Legends%27_Quest',
+    subtasks:[
+      {id:'leg_reqs',text:'Skill requirements: 50 Agility, 50 Crafting, 45 Herblore, 56 Magic, 42 Prayer, 50 Smithing, 50 Strength, 50 Thieving, 50 Woodcutting, 50 Mining (no Dungeoneering — this is OSRS!)'},
+      {id:'leg_prequests',text:'Complete prerequisite quests: Family Crest, Heroes\' Quest, Shilo Village, Underground Pass, Waterfall Quest, and others (check the wiki quest page for full list)'},
+      {id:'leg_complete',text:"Complete Legend's Quest"},
+      {id:'leg_herblore',text:'Claim the massive Herblore XP reward. Tip: plant ~200 seeds near the Kharazi Jungle before turning in the final totem to stock up on magic logs for later'},
+    ]
+  },
+  {
+    id:'prayer43',
+    title:'Prayer to 43 (Protection Prayers)',
+    priority:'must',
+    prereqIds:[],
+    description:'43 Prayer unlocks all protection prayers — essential for almost all bossing. A mix of quest XP, the Chaos Altar in the Wilderness, and finally His Faithful Servants gets you there efficiently.',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Prayer_training',
+    subtasks:[
+      {id:'pray_restless',text:'Restless Ghost — 1,125 Prayer XP'},
+      {id:'pray_priest',text:'Priest in Peril — 1,406 Prayer XP'},
+      {id:'pray_merlin',text:"Merlin's Crystal + Holy Grail — ~11k Prayer XP. Kill the Black Knight Titan with melee: attack then step away between attacks so he can't hit you back"},
+      {id:'pray_druidic',text:'Druidic Ritual + Recruitment Drive — ~1k Prayer XP'},
+      {id:'pray_ghosts',text:'Optional (if avoiding wilderness): Ghosts Ahoy — 2,400 XP'},
+      {id:'pray_history',text:'Optional: Making History — 1,000 XP'},
+      {id:'pray_rag',text:'Optional: Rag and Bone Man I — 500 XP'},
+      {id:'pray_elid',text:'Optional (higher reqs): Spirits of the Elid — 8,000 XP'},
+      {id:'pray_ham',text:'Optional: Another Slice of HAM + prerequisites — ~3,000 XP'},
+      {id:'pray_altar',text:'Chaos Altar method to 40: go naked to the Wilderness Boneyard, bring a little food. Pick up Big Bones and hop worlds until you have a full inventory'},
+      {id:'pray_use',text:'Run west to the Chaos Altar and USE bones on it (don\'t bury). Enable the Menu Entry Swapper plugin and shift-right-click the altar to swap left-click from Pray to Use — makes it much smoother'},
+      {id:'pray_safety',text:'Log out immediately if you see any geared players and swap worlds. Use low-population worlds (UK worlds recommended). Repeat until 40 Prayer'},
+      {id:'pray_hfs',text:'At 40 Prayer: complete "His Faithful Servants" — fight the Barrows Brothers using Air Magic (chaos/death runes, they\'re weak to it). No Protect from Melee yet so kite the melee brothers: hold Ctrl to walk while attacking, then run the opposite direction to safespot and repeat. You can leave mid-quest to bank and heal'},
+      {id:'pray_43',text:'His Faithful Servants gives 20,000 Prayer XP — skips you straight to 43 and unlocks all protection prayers. Congratulations!'},
+    ]
+  },
+  {
+    id:'ranged_path',
+    title:'Ranged Quest Path',
+    priority:'must',
+    prereqIds:[],
+    description:"A quest-driven path to unlock the Bone Crossbow — a free, strong early ranged weapon from the Goblin Cave. Pairs well with the Fight Caves goal and general bossing.",
+    wikiUrl:'https://oldschool.runescape.wiki/w/Bone_crossbow',
+    subtasks:[
+      {id:'range_goblin',text:'Complete Goblin Diplomacy — dyes from the Draynor witch, goblin armour from the quest area'},
+      {id:'range_rune',text:'Complete Rune Mysteries — short quest, required for the Lost Tribe chain'},
+      {id:'range_agility',text:'Train Agility to at least 13 (Lost Tribe requirement), or just finish the Draynor Rooftop Course to 20 while you\'re at it'},
+      {id:'range_thiev',text:'Get Thieving + Mining requirements for The Lost Tribe — do Fight Arena (teleport to Tree Gnome Village or Castle Wars) for a chunk of free Thieving and Attack XP'},
+      {id:'range_plague',text:'Complete Plague City — gives Mining XP toward Lost Tribe requirements'},
+      {id:'range_dorics',text:'Complete Doric\'s Quest — more Mining XP'},
+      {id:'range_losttribe',text:'Complete The Lost Tribe — unlocks the Goblin Cave and the Bone Crossbow shop'},
+      {id:'range_xbow',text:'Buy a Bone Crossbow and Bone Bolts from the shop in the Goblin Cave (underground beneath Lumbridge Swamp) — free and surprisingly strong'},
+      {id:'range_28',text:'Train Ranged to 28 to wield the Bone Crossbow. Use bonus XP from Brutus to skip some early grind, or Shadow of the Storm if your melee stats are solid'},
+      {id:'range_death',text:'Next in the chain: Death to the Dorgeshuun — unlocks the Bone Crossbow\'s special attack (drains enemy Defence). Requires a bit more Thieving and Agility training first'},
+      {id:'range_avas',text:"Aim for Ava's Attractor (Animal Magnetism quest, 30 Ranged) — automatically collects your ammo so you stop losing bolts"},
+    ]
+  },
+  {
+    id:'melee_path',
+    title:'Melee Quest Path',
+    priority:'must',
+    prereqIds:['prayer43','skill_agility'],
+    description:'A series of quests that give massive free Attack, Strength and Defence XP — skipping huge amounts of grinding. These also unlock key gear and areas.',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Optimal_quest_guide',
+    subtasks:[
+      {id:'melee_tourist',text:'Tourist Trap — great way to get Agility levels instead of doing courses. Just need 10 Fletching (make headless arrows) and the smithing part is covered by Doric\'s Quest. Rewards two lamps you put into Agility'},
+      {id:'melee_grandtree',text:'The Grand Tree — requires 25 Agility. Big Attack XP reward and opens up the gnome questline. Tourist Trap first makes hitting 25 Agility much easier'},
+      {id:'melee_deathplateau',text:'Death Plateau — quick quest, gives Attack XP and unlocks Climbing Boots (solid early boots, better than what most people are wearing)'},
+      {id:'melee_dragonslayer',text:'Dragon Slayer I — one of the most important quests. Unlocks Rune Platebody (best non-degradable chest for a long time) and gives a ton of Strength + Defence XP'},
+      {id:'melee_mm1',text:'Monkey Madness I — gives a huge chunk of Attack, Strength, Defence and HP XP. Unlocks Gnome Gliders for travel. One of the best quests in the game for melee progression'},
+      {id:'melee_merlin',text:"Merlin's Crystal + Holy Grail — you'll have done these for Prayer XP already. Revisit if not done yet"},
+      {id:'melee_kourend',text:'Kourend early questline (Client of Kourend, Depths of Despair, etc.) — good intro to the region and gives starter GP and useful teleport access across Great Kourend'},
+      {id:'melee_gear',text:'At this point you mainly need GP for gear upgrades. Kourend questing + Slayer drops will help fund the next steps'},
+    ]
+  },
+  {
+    id:'mage_path',
+    title:'Magic / Runecrafting Path',
+    priority:'must',
+    prereqIds:['skill_mining'],
+    description:'A quest-driven path to unlock Runecrafting and get a steady supply of runes via Guardians of the Rift. Self-sufficiency in runes is huge for bossing and skilling.',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Guardians_of_the_Rift',
+    subtasks:[
+      {id:'mage_mysteries',text:'Complete Rune Mysteries — unlocks Runecrafting and is required for the rest of this chain'},
+      {id:'mage_abyss',text:'Enter the Abyss (talk to the Mage of Zamorak north of Edgeville) — bank everything before entering the Wilderness for this step, as you get pk\'d by the NPC'},
+      {id:'mage_essence',text:'Mine some Rune Essence and craft runes to reach level 10 Runecrafting — shouldn\'t take long from where quests leave you'},
+      {id:'mage_eye',text:'Complete Temple of the Eye — unlocks the Guardians of the Rift minigame, the main way to train Runecrafting'},
+      {id:'mage_mining',text:'Get Mining XP toward the minigame reqs — Plague City, Doric\'s Quest, and The Lost Tribe give free Mining XP (or just mine, not your dad)'},
+      {id:'mage_pickaxe',text:'Try to reach 21 Mining for a Mithril Pickaxe — buy one from the mining shop beneath Falador in the Dwarven Mine'},
+      {id:'mage_gotr',text:'Guardians of the Rift — the main Runecrafting training method. Gives runes, Abyssal Pearls (spend on the Abyssal Needle + Lantern), and steady RC XP without needing to run the Abyss'},
+    ]
+  },
+  {
+    id:'melee_gear_prog',
+    title:'Melee Gear Progression',
+    priority:'must',
+    prereqIds:['melee_path','prayer43'],
+    description:'Work toward a solid melee setup. The big milestones are the Dragon Defender from the Warriors\' Guild, Helm of Neitiznot from The Fremennik Isles, and eventually the Fighter Torso from Barbarian Assault.',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Defender',
+    subtasks:[
+      {id:'mg_warriors_guild',text:'Warriors\' Guild entry requires Attack + Strength totalling 130, or 99 in either. Farm tokens using the Animated Armour room — use Black armour for a good tokens/hr rate without needing expensive gear'},
+      {id:'mg_defenders',text:'Kill Cyclopes on the top floor for defenders — collect in order from Bronze → Rune (1/50 each). After each drop, leave the room and show it to Kamfreena to unlock the next tier'},
+      {id:'mg_rune_def',text:'Once you have the Rune Defender, show it to Lorelai in the basement to access Dragon Defender Cyclopes. Dragon Defender drops at 1/100 — expect ~450 total kills on average'},
+      {id:'mg_dragon_def',text:'Dragon Defender is best-in-slot off-hand for melee for a very long time — big strength and attack bonuses'},
+      {id:'mg_dragon_scim',text:'Dragon Scimitar (60 Attack): unlock via Monkey Madness I. Best-in-slot slash weapon until Zombie Axe — get this early'},
+      {id:'mg_climbing_boots',text:'Climbing Boots: from Death Plateau quest, or buy from Tenzing on the way to Death Plateau for 12gp. Cheap best-in-slot boots for a long time'},
+      {id:'mg_str_amulet',text:'Amulet of Strength → Amulet of Glory (crafting): Strength amulet is a great early pickup. Glory is a big upgrade and also gives useful teleports — craft from dragonstones'},
+      {id:'mg_neitiznot',text:'Helm of Neitiznot (55 Defence): complete The Fremennik Isles quest. Go straight for this — best non-degradable helmet for a very long time, great prayer bonus. Skip Berserker Helm entirely'},
+      {id:'mg_fighter_torso',text:'Fighter Torso: from Barbarian Assault minigame — untradeable, good Strength bonus. Worth doing with the clan'},
+      {id:'mg_proselyte',text:'Proselyte Armour (Slug Menace/Temple Knight questline): best prayer bonus armour we can get, great for DKS and any fight where you\'re praying a lot'},
+    ]
+  },
+  {
+    id:'ranged_gear_prog',
+    title:'Ranged Gear Progression',
+    priority:'must',
+    prereqIds:['ranged_path'],
+    description:'Build toward a solid ranged setup. Mixed hide armour is your main early target. Key milestones are Ava\'s device, Hunter\'s Sunlight Crossbow at 66 Ranged, and eventually Rune Crossbow.',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Ranged',
+    subtasks:[
+      {id:'rg_avas',text:"Ava's Attractor (30 Ranged, Animal Magnetism quest) — automatically picks up your ammo. Get this ASAP. Upgrade to Accumulator at 50 Ranged"},
+      {id:'rg_mixed_hide',text:'Mixed Hide armour (20 Def): craftable from hides of various monsters — your main early ranged armour as an ironman. Aim for this before worrying about d\'hide'},
+      {id:'rg_sunlight_xbow',text:"Hunter's Sunlight Crossbow (66 Ranged): strong budget crossbow, we'll try to get folks these via fletching. A big ranged upgrade for the Fight Caves and general bossing"},
+      {id:'rg_bolts',text:'Broad Bolts at 55 Slayer are cheap and effective for training. Enchanted bolts (Diamond, Ruby) are huge DPS upgrades for bossing'},
+      {id:'rg_rcb',text:'Rune Crossbow (61 Ranged): farmable from the Crazy Archaeologist in the Wilderness (level 204, drops noted rune crossbows). Solid upgrade over bone/sunlight crossbow'},
+      {id:'rg_archer',text:'Archer Helm (45 Def, Fremennik Trials): good ranged helmet — buy from Skulgrimen in Rellekka'},
+      {id:'rg_60ranged',text:'Reach 60 Ranged — solid milestone for armour and weapon access. Train via Slayer tasks or Rock Crabs'},
+    ]
+  },
+  {
+    id:'magic_gear_prog',
+    title:'Magic Gear Progression',
+    priority:'must',
+    prereqIds:['mage_path','ancientmagicks'],
+    description:'Build toward a strong magic setup. Mystic robes are the first major upgrade, then Infinity Boots from the Mage Training Arena. Ancient Magicks opens up the best offensive spells.',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Magic',
+    subtasks:[
+      {id:'magic_mystic',text:'Mystic Robes (20 Defence): buy the full set from the Magic Guild in Yanille — affordable and solid for a long time'},
+      {id:'magic_chaos_gauntlets',text:'Chaos Gauntlets (Family Crest quest): boosts bolt spell max hit significantly — useful for Barrows and early bossing with elemental staves'},
+      {id:'magic_god_cape',text:'God Cape from Mage Arena 1 (60 Magic): best-in-slot magic cape, free. Huge magic attack bonus — get this once you hit 60'},
+      {id:'magic_farseer',text:'Farseer Helm (45 Def, Fremennik Trials): best magic helmet for our level — buy from Skulgrimen in Rellekka for 78k or get from DKS'},
+      {id:'magic_mta',text:'Mage Training Arena: grind for Infinity Boots (best-in-slot magic boots), Bones to Peaches spell (huge QoL at bosses), and the Rune Pouch (holds 3 rune types — massive inventory upgrade for all styles)'},
+      {id:'magic_60',text:'Reach 60 Magic — good immediate goal, unlocks God Cape and most useful spells for our stage'},
+      {id:'magic_70',text:'Reach 70 Magic — unlocks Ice Burst and other strong Ancient Magick spells, significant PvM upgrade'},
+    ]
+  },
+  {
+    id:'thieving_money',
+    title:'Thieving & Money Making',
+    priority:'should',
+    prereqIds:['skill_agility'],
+    description:'Thieving is your best early money maker as an ironman. Blackjacking in Pollnivneach generates solid GP with few requirements. Wealthy Citizens in Civitas illa Fortis is a great AFK alternative later on. Also the best way to get seeds for Herblore.',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Ironman_Guide/Thieving',
+    subtasks:[
+      {id:'thiev_stalls',text:'Start: steal from Hosidius fruit stalls (15% Hosidius favour needed) until 42.5 Thieving — good early food and XP'},
+      {id:'thiev_stronghold',text:'Do the Stronghold of Security for a free 10,000 coins — quick and easy early GP'},
+      {id:'thiev_feud',text:'Complete The Feud quest (set in Pollnivneach) — required to unlock blackjacking. Safespot both bosses'},
+      {id:'thiev_rogues',text:"Get the Rogue's Outfit from the Rogues' Den minigame (requires 50 Thieving + 50 Agility to buy a Lockpick from Martin Thwait). Doubles your coin pickpocket loot — huge GP/hr boost"},
+      {id:'thiev_blackjack',text:'Blackjacking in Pollnivneach: lure a bandit into a house, knock them out, pickpocket twice, repeat. Levels 45–55: Bearded Pollnivnian Bandits (~100k XP/hr). 55–65: Pollnivnian Bandits (~130k). 65+: Menaphite Thugs in south Pollnivneach (~200k+)'},
+      {id:'thiev_bjsetup',text:'Blackjack setup tips: bring food (wines at 3gp each from the general store nearby — can unnote them at the Bank Exchange Merchant), hide NPC attack options in settings. Menu Entry Swapper does NOT work here — manual clicking only'},
+      {id:'thiev_wealthy',text:'Wealthy Citizens in Civitas illa Fortis (Varlamore, Children of the Sun quest required): very low intensity, moderate GP + XP, passive prayer XP from blessed bone statuettes. Great AFK alternative to blackjacking'},
+      {id:'thiev_master',text:'Master Farmers (38+ Thieving): pickpocket for herb and tree seeds — essential for ironman Farming + Herblore. Best seed source before Farming Contracts. Gets much better at 94 Thieving + Ardougne Medium Diary (100% success rate)'},
+      {id:'thiev_miscellania',text:'Once you have GP from thieving: fund Kingdom of Miscellania (750k coffer) for passive herb income — thieving is one of the best ways to get the startup cash for this'},
+      {id:'thiev_60',text:'Aim for 60 Thieving — at this point between blackjacking and wealthy citizens you\'ll be set for money for the foreseeable future'},
+    ]
+  },
+  {
+    id:'moons',
+    title:'Moons of Peril — Final Goal!',
+    priority:'must',
+    prereqIds:['barrows','slayer48','skill_herblore'],
+    description:"Three boss fights in Neypotzli, the prison beneath Cam Torum. First complete the Perilous Moons quest (also fights the bosses) to unlock repeatable access. Tank gear is important — their attacks hit harder the less armour you have.",
+    wikiUrl:'https://oldschool.runescape.wiki/w/Moons_of_Peril',
+    subtasks:[
+      {id:'moons_quest',text:'Complete the Perilous Moons quest first — fights all three bosses as a tutorial and unlocks repeatable access + the Lunar Chest'},
+      {id:'moons_varlamore',text:'Access via Quetzal transport to Cam Torum, or use a calcified moth teleport. Requires completing Twilight\'s Promise + Children of the Sun for Varlamore'},
+      {id:'moons_supplies',text:'You don\'t need to bring food or potions — everything is provided inside via supply crates in each resource area. Just bring your combat gear'},
+      {id:'moons_armour',text:'Bring tank gear — Barrows armour (Torag/Guthan) is ideal. The bosses deal more damage the less armour you have, so prioritise defence over DPS stats'},
+      {id:'moons_loot',text:'Fight all three bosses before looting — kill Blood Moon, Eclipse Moon, and Blue Moon, then loot the Lunar Chest once at the end. Chest is in the south of the dungeon'},
+      {id:'moons_farm',text:'Farm for Blood/Blue/Eclipse Moon armour sets — great mid-game gear with duplicate drop protection. Check the wiki for each boss\'s mechanics before your first run'},
+    ]
+  },
+];
+
+const PRIORITY_LABEL = {must:'🟢 Priority',should:'🟡 Should Do',nice:'🟠 Optional'};
+const PRIORITY_COLOR = {must:'var(--green)',should:'var(--yellow)',nice:'var(--orange)'};
+
+let state = {};
+let currentFilter = 'all';
+let currentView = 'cards';
+
+function loadState(){
+  try{
+    const s = localStorage.getItem('osrs_tasks_v2');
+    if(s) state = JSON.parse(s);
+  }catch(e){state={}}
+}
+
+function saveState(){
+  try{localStorage.setItem('osrs_tasks_v2',JSON.stringify(state))}catch(e){}
+}
+
+function isCardComplete(task){
+  return task.subtasks.every(st => state[st.id]);
+}
+
+function getSubProgress(task){
+  const done = task.subtasks.filter(st=>state[st.id]).length;
+  return {done, total: task.subtasks.length};
+}
+
+function toggleCard(taskId){
+  const body = document.getElementById('body_'+taskId);
+  const chev = document.getElementById('chev_'+taskId);
+  if(body){
+    body.classList.toggle('open');
+    chev.classList.toggle('open');
+  }
+}
+
+function toggleMain(taskId, e){
+  e.stopPropagation();
+  const task = TASKS.find(t=>t.id===taskId);
+  const allDone = isCardComplete(task);
+  task.subtasks.forEach(st=>{state[st.id] = !allDone});
+  saveState();
+  renderCards();
+  updateProgress();
+}
+
+function toggleSub(subId, taskId, e){
+  e.stopPropagation();
+  state[subId] = !state[subId];
+  saveState();
+  const task = TASKS.find(t=>t.id===taskId);
+  if(currentView==='graph'){
+    refreshPanelSubtask(subId, task);
+    refreshGraphNode(task);
+  } else {
+    refreshCard(task);
+  }
+  updateProgress();
+}
+
+function refreshPanelSubtask(subId, task){
+  // Update the clicked checkbox and text in the panel
+  const panel = document.getElementById('panel-content');
+  if(!panel) return;
+  const chks = panel.querySelectorAll('.subtask-check');
+  const txts = panel.querySelectorAll('.subtask-text');
+  task.subtasks.forEach((st, i)=>{
+    const d = !!state[st.id];
+    if(chks[i]) chks[i].classList.toggle('checked', d);
+    if(txts[i]) txts[i].classList.toggle('done', d);
+  });
+  // Update progress bar in panel
+  const {done,total} = getSubProgress(task);
+  const fill = panel.querySelector('.sub-prog-fill');
+  if(fill) fill.style.width = total ? (done/total*100)+'%' : '0%';
+}
+
+function refreshGraphNode(task){
+  const node = document.querySelector(`.g-node[data-id="${task.id}"]`);
+  if(!node) return;
+  const complete = isCardComplete(task);
+  const {done,total} = getSubProgress(task);
+  node.classList.toggle('completed', complete);
+  const rect = node.querySelector('rect');
+  if(rect){
+    rect.setAttribute('fill', complete?'#1a2a18':'#2a2010');
+    rect.setAttribute('stroke', complete?'#4a8c3f':'#5a4a2e');
+  }
+  // Update progress bar rect width inside node
+  const rects = node.querySelectorAll('rect');
+  // progress fill is the last rect (4th)
+  if(rects.length >= 4){
+    const NODE_W = 170;
+    const pbW = NODE_W - 20;
+    rects[3].setAttribute('width', total ? ((done/total)*pbW).toString() : '0');
+    rects[3].setAttribute('fill', complete?'#4a8c3f':'#c8a84b');
+  }
+  // Update title color
+  const titleText = node.querySelector('.g-title');
+  if(titleText) titleText.setAttribute('fill', complete?'#6abf5e':'#c8a84b');
+  // Update progress label text
+  const texts = node.querySelectorAll('text');
+  if(texts.length >= 2){
+    const lastText = texts[texts.length-1];
+    lastText.textContent = `${done}/${total} · ${PRIORITY_LABEL[task.priority]}`;
+  }
+}
+
+function refreshCard(task){
+  const el = document.getElementById('card_'+task.id);
+  if(!el) return;
+  const complete = isCardComplete(task);
+  el.classList.toggle('completed-card', complete);
+  const chk = el.querySelector('.card-check');
+  if(chk) chk.classList.toggle('checked', complete);
+  const titleEl = el.querySelector('.card-title');
+  if(titleEl) titleEl.classList.toggle('done', complete);
+
+  // update overlay
+  let ov = el.querySelector('.card-done-overlay');
+  if(complete && !ov){
+    ov = document.createElement('div');
+    ov.className = 'card-done-overlay';
+    ov.textContent = 'Complete';
+    el.appendChild(ov);
+  } else if(!complete && ov){
+    ov.remove();
+  }
+
+  // update subtasks
+  task.subtasks.forEach(st=>{
+    const stChk = document.getElementById('stchk_'+st.id);
+    const stTxt = document.getElementById('sttxt_'+st.id);
+    if(stChk) stChk.classList.toggle('checked', !!state[st.id]);
+    if(stTxt) stTxt.classList.toggle('done', !!state[st.id]);
+  });
+
+  // update sub progress
+  const {done,total} = getSubProgress(task);
+  const sp = el.querySelector('.subtask-progress');
+  const sf = el.querySelector('.sub-prog-fill');
+  if(sp) sp.textContent = `${done} / ${total} subtasks`;
+  if(sf) sf.style.width = total ? (done/total*100)+'%' : '0%';
+
+  // prereq chips
+  refreshPrereqChips(task, el);
+}
+
+function refreshPrereqChips(task, el){
+  const chips = el.querySelectorAll('.prereq-chip');
+  chips.forEach(chip=>{
+    const pid = chip.dataset.prereqId;
+    const pt = TASKS.find(t=>t.id===pid);
+    if(pt && isCardComplete(pt)){
+      chip.classList.add('satisfied');
+      chip.title = 'Completed!';
+    } else {
+      chip.classList.remove('satisfied');
+    }
+  });
+}
+
+function scrollToTask(taskId){
+  const el = document.getElementById('card_'+taskId);
+  if(el){
+    el.scrollIntoView({behavior:'smooth',block:'center'});
+    el.style.outline = '2px solid var(--gold)';
+    setTimeout(()=>el.style.outline='',1500);
+    // open body
+    const body = document.getElementById('body_'+taskId);
+    const chev = document.getElementById('chev_'+taskId);
+    if(body && !body.classList.contains('open')){
+      body.classList.add('open');
+      if(chev) chev.classList.add('open');
+    }
+  }
+}
+
+function updateProgress(){
+  const totalSubs = TASKS.reduce((a,t)=>a+t.subtasks.length,0);
+  const doneSubs = TASKS.reduce((a,t)=>a+t.subtasks.filter(st=>state[st.id]).length,0);
+  const bar = document.getElementById('main-prog-bar');
+  const label = document.getElementById('main-prog-label');
+  if(bar) bar.style.width = totalSubs ? (doneSubs/totalSubs*100)+'%' : '0%';
+  if(label) label.textContent = `${doneSubs} / ${totalSubs}`;
+}
+
+function buildCard(task){
+  const complete = isCardComplete(task);
+  const {done,total} = getSubProgress(task);
+  const prereqs = task.prereqIds.map(pid=>TASKS.find(t=>t.id===pid)).filter(Boolean);
+
+  const card = document.createElement('div');
+  card.className = `task-card priority-${task.priority}${complete?' completed-card':''}`;
+  card.id = 'card_'+task.id;
+
+  const subtasksHtml = task.subtasks.map(st=>{
+    const d = !!state[st.id];
+    const linkMatch = st.text.match(/https?:\/\/\S+/);
+    let text = st.text;
+    if(linkMatch){
+      text = st.text.replace(linkMatch[0], `<a href="${linkMatch[0]}" class="subtask-link" target="_blank">[wiki link]</a>`);
+    }
+    return `
+      <li class="subtask-item">
+        <div class="subtask-check${d?' checked':''}" id="stchk_${st.id}" onclick="toggleSub('${st.id}','${task.id}',event)" title="${d?'Mark incomplete':'Mark complete'}"></div>
+        <span class="subtask-text${d?' done':''}" id="sttxt_${st.id}">${text}</span>
+      </li>`;
+  }).join('');
+
+  const prereqsHtml = prereqs.length ? `
+    <div class="prereqs-section">
+      <div class="prereqs-label">Recommended First</div>
+      <div class="prereqs-list">
+        ${prereqs.map(pt=>{
+          const pComplete = isCardComplete(pt);
+          return `<div class="prereq-chip${pComplete?' satisfied':''}" data-prereq-id="${pt.id}" onclick="scrollToTask('${pt.id}')" title="${pComplete?'Completed! Click to view':'Click to jump to this task'}">${pt.title}</div>`;
+        }).join('')}
+      </div>
+    </div>` : '';
+
+  card.innerHTML = `
+    <div class="card-priority-bar"></div>
+    <div class="card-header" onclick="toggleCard('${task.id}')">
+      <div class="card-check${complete?' checked':''}" id="mainchk_${task.id}" onclick="toggleMain('${task.id}',event)" title="Toggle all subtasks"></div>
+      <div class="card-title-area">
+        <div class="card-title${complete?' done':''}">${task.title}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap">
+          <span class="priority-badge ${task.priority}">${PRIORITY_LABEL[task.priority]}</span>
+          ${task.isSkillNode?'<span class="priority-badge" style="background:rgba(58,106,155,0.2);border-color:rgba(58,106,155,0.4);color:#5a8abf">⚒ Skill Training</span>':''}
+          ${task.wikiUrl?`<a href="${task.wikiUrl}" onclick="event.stopPropagation()" target="_blank" class="subtask-link" style="font-size:12px">Wiki ↗</a>`:''}
+        </div>
+        <div class="subtask-progress">${done} / ${total} subtasks</div>
+        <div class="sub-prog-bar"><div class="sub-prog-fill" style="width:${total?(done/total*100):0}%"></div></div>
+      </div>
+      <div class="card-chevron" id="chev_${task.id}">▼</div>
+    </div>
+    <div class="card-body" id="body_${task.id}">
+      ${task.description ? `<p class="card-desc">${task.description}</p>` : ''}
+      <ul class="subtasks">${subtasksHtml}</ul>
+      ${prereqsHtml}
+    </div>
+    ${complete?'<div class="card-done-overlay">Complete</div>':''}
+  `;
+
+  return card;
+}
+
+function renderCards(){
+  const container = document.getElementById('cards-container');
+  container.innerHTML='';
+  const filtered = TASKS.filter(t=>{
+    if(currentFilter==='must') return t.priority==='must';
+    if(currentFilter==='should') return t.priority==='should';
+    if(currentFilter==='nice') return t.priority==='nice';
+    if(currentFilter==='incomplete') return !isCardComplete(t);
+    if(currentFilter==='complete') return isCardComplete(t);
+    return true;
+  });
+  filtered.forEach(task=>{
+    container.appendChild(buildCard(task));
+  });
+}
+
+function setFilter(filter, btn){
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCards();
+}
+
+function setView(v){
+  currentView = v;
+  document.getElementById('cards-container').style.display = v==='cards'?'':'none';
+  document.querySelector('.cards-grid').style.display = v==='cards'?'':'none';
+  document.getElementById('graph-view').style.display = v==='graph'?'block':'none';
+  document.getElementById('btn-cards').classList.toggle('active',v==='cards');
+  document.getElementById('btn-graph').classList.toggle('active',v==='graph');
+  if(v==='graph') renderGraph();
+}
+
+// ── GRAPH ──
+
+function renderGraph(){
+  const svg = document.getElementById('graph-svg');
+  svg.innerHTML='';
+
+  const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+  defs.innerHTML=`
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="rgba(90,74,46,0.7)"/>
+    </marker>
+    <marker id="arrow-hi" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#c8a84b"/>
+    </marker>
+  `;
+  svg.appendChild(defs);
+
+  const bg = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  bg.setAttribute('width','100%');bg.setAttribute('height','100%');bg.setAttribute('fill','#1e1810');
+  svg.appendChild(bg);
+
+  const layers = computeLayers();
+  const NODE_W = 180, NODE_H = 72, HGAP = 80, VGAP = 40;
+  const positions = {};
+
+  layers.forEach((layer, li)=>{
+    const totalH = layer.length*NODE_H + (layer.length-1)*VGAP;
+    const startY = 40 + (Math.max(...layers.map(l=>l.length*NODE_H+(l.length-1)*VGAP)) - totalH)/2;
+    const x = 40 + li*(NODE_W+HGAP);
+    layer.forEach((taskId, ti)=>{
+      positions[taskId] = {x, y: startY + ti*(NODE_H+VGAP)};
+    });
+  });
+
+  // Draw edges
+  TASKS.forEach(task=>{
+    task.prereqIds.forEach(prereqId=>{
+      const from = positions[prereqId];
+      const to = positions[task.id];
+      if(!from||!to) return;
+      const x1 = from.x+NODE_W, y1 = from.y+NODE_H/2;
+      const x2 = to.x, y2 = to.y+NODE_H/2;
+      const dx = Math.abs(x2-x1)*0.5;
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d',`M${x1},${y1} C${x1+dx},${y1} ${x2-dx},${y2} ${x2},${y2}`);
+      path.setAttribute('stroke','rgba(90,74,46,0.5)');
+      path.setAttribute('stroke-width','1.5');
+      path.setAttribute('fill','none');
+      path.setAttribute('marker-end','url(#arrow)');
+      path.dataset.from=prereqId;
+      path.dataset.to=task.id;
+      path.classList.add('g-edge');
+      svg.appendChild(path);
+    });
+  });
+
+  // Draw nodes
+  TASKS.forEach(task=>{
+    const pos = positions[task.id];
+    if(!pos) return;
+    const complete = isCardComplete(task);
+    const {done,total} = getSubProgress(task);
+    const pcolor = PRIORITY_COLOR[task.priority];
+    const isSkill = !!task.isSkillNode;
+
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.classList.add('g-node');
+    if(complete) g.classList.add('completed');
+    g.setAttribute('transform',`translate(${pos.x},${pos.y})`);
+    g.dataset.id=task.id;
+
+    const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    rect.setAttribute('width',NODE_W);rect.setAttribute('height',NODE_H);
+    rect.setAttribute('rx','4');
+    // Skill nodes get a blue-tinted bg to visually distinguish
+    rect.setAttribute('fill', complete?(isSkill?'#1a2a30':'#1a2a18'):(isSkill?'#161e28':'#2a2010'));
+    rect.setAttribute('stroke', complete?(isSkill?'#3a6a9b':'#4a8c3f'):(isSkill?'#2a4a6a':'#5a4a2e'));
+    rect.setAttribute('stroke-width', isSkill?'1.5':'1');
+    if(isSkill){
+      rect.setAttribute('stroke-dasharray','4,2');
+    }
+    g.appendChild(rect);
+
+    // Priority/type bar at top
+    const pbar = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    pbar.setAttribute('width',NODE_W);pbar.setAttribute('height','3');
+    pbar.setAttribute('rx','0');
+    pbar.setAttribute('fill', isSkill?'#3a6a9b':pcolor);
+    g.appendChild(pbar);
+
+    // Skill node badge
+    if(isSkill){
+      const badge = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      badge.setAttribute('x',NODE_W-38);badge.setAttribute('y','7');
+      badge.setAttribute('width','32');badge.setAttribute('height','13');
+      badge.setAttribute('rx','3');badge.setAttribute('fill','rgba(58,106,155,0.4)');
+      g.appendChild(badge);
+      const badgeTxt = document.createElementNS('http://www.w3.org/2000/svg','text');
+      badgeTxt.setAttribute('x',NODE_W-22);badgeTxt.setAttribute('y','17');
+      badgeTxt.setAttribute('fill','#5a8abf');badgeTxt.setAttribute('font-size','8');
+      badgeTxt.setAttribute('font-family',"'Cinzel',serif");badgeTxt.setAttribute('text-anchor','middle');
+      badgeTxt.textContent='SKILL';
+      g.appendChild(badgeTxt);
+    }
+
+    // Title
+    const titleLines = wrapText(task.title, 20);
+    titleLines.forEach((line,li)=>{
+      const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x','10');
+      t.setAttribute('y', (20 + li*14).toString());
+      t.setAttribute('fill', complete?(isSkill?'#5a8abf':'#6abf5e'):(isSkill?'#5a8abf':'#c8a84b'));
+      t.setAttribute('font-family',"'Cinzel',serif");
+      t.setAttribute('font-size','12');
+      t.setAttribute('font-weight','600');
+      t.textContent = line;
+      g.appendChild(t);
+    });
+
+    // Progress bar
+    const pbW = NODE_W - 20, pbY = NODE_H - 16;
+    const pbBg = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    pbBg.setAttribute('x','10');pbBg.setAttribute('y',pbY.toString());
+    pbBg.setAttribute('width',pbW.toString());pbBg.setAttribute('height','4');
+    pbBg.setAttribute('rx','2');pbBg.setAttribute('fill','#2a2a3a');
+    g.appendChild(pbBg);
+
+    if(total>0){
+      const pbFill = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      pbFill.setAttribute('x','10');pbFill.setAttribute('y',pbY.toString());
+      pbFill.setAttribute('width',((done/total)*pbW).toString());pbFill.setAttribute('height','4');
+      pbFill.setAttribute('rx','2');
+      pbFill.setAttribute('fill',complete?(isSkill?'#3a6a9b':'#4a8c3f'):(isSkill?'#3a6a9b':'#c8a84b'));
+      g.appendChild(pbFill);
+    }
+
+    // Progress label
+    const plbl = document.createElementNS('http://www.w3.org/2000/svg','text');
+    plbl.setAttribute('x','10');plbl.setAttribute('y',(pbY-3).toString());
+    plbl.setAttribute('fill','#6b5535');plbl.setAttribute('font-size','10');
+    plbl.setAttribute('font-family',"'Crimson Pro',serif");
+    plbl.textContent = `${done}/${total} · ${PRIORITY_LABEL[task.priority]}`;
+    g.appendChild(plbl);
+
+    g.addEventListener('click',()=>openPanel(task.id));
+    g.addEventListener('mouseenter',()=>highlightEdges(task.id, true));
+    g.addEventListener('mouseleave',()=>highlightEdges(task.id, false));
+
+    svg.appendChild(g);
+  });
+
+  // Size SVG to content
+  const maxX = Math.max(...Object.values(positions).map(p=>p.x)) + NODE_W + 40;
+  const maxY = Math.max(...Object.values(positions).map(p=>p.y)) + NODE_H + 40;
+  svg.setAttribute('width', Math.max(maxX, 600).toString());
+  svg.setAttribute('height', Math.max(maxY, 400).toString());
+}
+
+function computeLayers(){
+  const taskMap = {};
+  TASKS.forEach(t=>taskMap[t.id]=t);
+  const layers = [];
+  const assigned = {};
+
+  function getLayer(id){
+    if(assigned[id]!==undefined) return assigned[id];
+    const task = taskMap[id];
+    if(!task||!task.prereqIds.length){
+      assigned[id]=0;return 0;
+    }
+    const maxPre = Math.max(...task.prereqIds.map(pid=>getLayer(pid)));
+    assigned[id]=maxPre+1;
+    return assigned[id];
+  }
+
+  TASKS.forEach(t=>getLayer(t.id));
+  const maxL = Math.max(...Object.values(assigned));
+  for(let i=0;i<=maxL;i++) layers.push([]);
+  TASKS.forEach(t=>layers[assigned[t.id]].push(t.id));
+  return layers;
+}
+
+function wrapText(text, maxChars){
+  const words = text.split(' ');
+  const lines = [];
+  let current = '';
+  words.forEach(w=>{
+    if((current+' '+w).trim().length <= maxChars) current = (current+' '+w).trim();
+    else{if(current) lines.push(current); current=w;}
+  });
+  if(current) lines.push(current);
+  return lines.slice(0,2);
+}
+
+function highlightEdges(taskId, on){
+  document.querySelectorAll('.g-edge').forEach(e=>{
+    if(e.dataset.from===taskId||e.dataset.to===taskId){
+      e.setAttribute('stroke',on?'#c8a84b':'rgba(90,74,46,0.5)');
+      e.setAttribute('stroke-width',on?'2':'1.5');
+      e.setAttribute('marker-end',on?'url(#arrow-hi)':'url(#arrow)');
+    }
+  });
+}
+
+function openPanel(taskId){
+  const task = TASKS.find(t=>t.id===taskId);
+  if(!task) return;
+  const complete = isCardComplete(task);
+  const {done,total} = getSubProgress(task);
+  const prereqs = task.prereqIds.map(pid=>TASKS.find(t=>t.id===pid)).filter(Boolean);
+  const dependents = TASKS.filter(t=>t.prereqIds.includes(taskId));
+
+  const content = document.getElementById('panel-content');
+  content.innerHTML = `
+    <div class="panel-title">${task.title}</div>
+    <div class="panel-badge">
+      <span class="priority-badge ${task.priority}" style="display:inline-flex">${PRIORITY_LABEL[task.priority]}</span>
+      ${complete?'<span class="priority-badge must" style="display:inline-flex;margin-left:6px">✓ Complete</span>':''}
+    </div>
+    <p class="panel-desc">${task.description}</p>
+
+    ${task.wikiUrl?`<div class="panel-section"><a href="${task.wikiUrl}" target="_blank" class="subtask-link">📖 View on OSRS Wiki ↗</a></div>`:''}
+
+    <div class="panel-section">
+      <div class="panel-section-title">Progress — ${done}/${total}</div>
+      <div class="sub-prog-bar" style="margin-bottom:10px"><div class="sub-prog-fill" style="width:${total?done/total*100:0}%"></div></div>
+      <ul class="subtasks">
+        ${task.subtasks.map(st=>{
+          const d = !!state[st.id];
+          return `<li class="subtask-item">
+            <div class="subtask-check${d?' checked':''}" onclick="toggleSub('${st.id}','${task.id}',event)"></div>
+            <span class="subtask-text${d?' done':''}">${st.text}</span>
+          </li>`;
+        }).join('')}
+      </ul>
+    </div>
+
+    ${prereqs.length?`
+      <div class="panel-section">
+        <div class="panel-section-title">Recommended First</div>
+        <div class="prereqs-list">
+          ${prereqs.map(pt=>{
+            const pc = isCardComplete(pt);
+            return `<div class="prereq-chip${pc?' satisfied':''}" onclick="closePanel();scrollToTask('${pt.id}')">${pt.title}</div>`;
+          }).join('')}
+        </div>
+      </div>` : ''}
+
+    ${dependents.length?`
+      <div class="panel-section">
+        <div class="panel-section-title">Unlocks</div>
+        <div class="prereqs-list">
+          ${dependents.map(dt=>`<div class="prereq-chip" onclick="openPanel('${dt.id}')">${dt.title}</div>`).join('')}
+        </div>
+      </div>` : ''}
+  `;
+
+  document.getElementById('detail-panel').classList.add('open');
+
+  // Highlight node
+  document.querySelectorAll('.g-node').forEach(n=>n.classList.remove('selected'));
+  const node = document.querySelector(`.g-node[data-id="${taskId}"]`);
+  if(node) node.classList.add('selected');
+}
+
+function closePanel(){
+  document.getElementById('detail-panel').classList.remove('open');
+  document.querySelectorAll('.g-node').forEach(n=>n.classList.remove('selected'));
+}
+
+// close panel on click outside
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#detail-panel')&&!e.target.closest('.g-node')){
+    // only auto-close on graph view
+    if(currentView==='graph') closePanel();
+  }
+});
+
+// ── INIT ──
+loadState();
+renderCards();
+updateProgress();
+</script>
+</body>
+</html>
