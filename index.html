@@ -200,7 +200,34 @@ header .spacer{flex:1}
 .sub-prog-bar{background:var(--stone-mid);border-radius:2px;height:3px;margin-top:4px;overflow:hidden}
 .sub-prog-fill{height:100%;background:var(--green);border-radius:2px;transition:width .3s}
 
-/* ── GRAPH VIEW ── */
+/* ── LOCKED CARDS ── */
+.task-card.locked{
+  opacity:.5;
+  filter:blur(1.5px);
+  transition:opacity .3s,filter .3s;
+}
+.locked-overlay{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  z-index:10;
+  background:rgba(26,20,10,0.15);
+  border-radius:var(--radius);
+}
+.unlock-btn{
+  background:var(--stone-mid);border:1px solid var(--stone-light);
+  color:var(--text-muted);padding:5px 16px;border-radius:var(--radius);
+  cursor:pointer;font-family:'Cinzel',serif;font-size:12px;letter-spacing:.5px;
+  transition:all .2s;
+}
+.unlock-btn:hover{border-color:var(--gold-dark);color:var(--gold);background:var(--stone-card)}
+.locked-prereqs{font-size:12px;color:var(--text-dim);text-align:center;max-width:200px;line-height:1.4;font-style:italic}
+.hide-locked-btn{
+  background:none;border:1px solid var(--stone-light);color:var(--text-muted);
+  padding:4px 14px;border-radius:20px;cursor:pointer;font-family:'Crimson Pro',serif;font-size:14px;
+  transition:all .2s;
+}
+.hide-locked-btn:hover{border-color:var(--gold-dark);color:var(--text-main)}
+.hide-locked-btn.active{background:var(--stone-mid);border-color:var(--gold-dark);color:var(--gold)}
 #graph-view{padding:20px 24px 40px;display:none}
 #graph-view.active{display:block}
 .graph-container{
@@ -220,6 +247,8 @@ header .spacer{flex:1}
 .g-node text{fill:var(--text-muted);font-family:'Crimson Pro',serif;font-size:12px;pointer-events:none}
 .g-node .g-title{fill:var(--gold);font-size:13px;font-family:'Cinzel',serif}
 .g-node .g-priority{font-size:10px}
+.g-node.g-locked rect{opacity:.5}
+.g-node.g-locked:hover rect{stroke:#6b5535;fill:#1e1810}
 .g-edge{stroke:rgba(90,74,46,0.5);stroke-width:1.5;fill:none;marker-end:url(#arrow)}
 .g-edge.highlighted{stroke:var(--gold-dark);stroke-width:2}
 
@@ -303,6 +332,7 @@ header .spacer{flex:1}
   <button class="filter-btn" onclick="setFilter('nice',this)">🟠 Optional</button>
   <button class="filter-btn" onclick="setFilter('incomplete',this)">Incomplete</button>
   <button class="filter-btn" onclick="setFilter('complete',this)">Complete</button>
+  <button class="hide-locked-btn" id="hide-locked-btn" onclick="toggleHideLocked(this)">🔒 Hide Locked</button>
 </div>
 
 <div class="divider">— Tasks —</div>
@@ -874,18 +904,54 @@ const PRIORITY_LABEL = {must:'🟢 Priority',should:'🟡 Should Do',nice:'🟠 
 const PRIORITY_COLOR = {must:'var(--green)',should:'var(--yellow)',nice:'var(--orange)'};
 
 let state = {};
+let unlockedIds = {}; // manually unlocked task ids
 let currentFilter = 'all';
 let currentView = 'cards';
+let hideLocked = false;
 
 function loadState(){
   try{
     const s = localStorage.getItem('osrs_tasks_v2');
     if(s) state = JSON.parse(s);
-  }catch(e){state={}}
+    const u = localStorage.getItem('osrs_unlocked_v2');
+    if(u) unlockedIds = JSON.parse(u);
+    const h = localStorage.getItem('osrs_hidelocked');
+    if(h) hideLocked = JSON.parse(h);
+  }catch(e){state={};unlockedIds={}}
 }
 
 function saveState(){
-  try{localStorage.setItem('osrs_tasks_v2',JSON.stringify(state))}catch(e){}
+  try{
+    localStorage.setItem('osrs_tasks_v2',JSON.stringify(state));
+    localStorage.setItem('osrs_unlocked_v2',JSON.stringify(unlockedIds));
+  }catch(e){}
+}
+
+// A task is locked if it has prereqs and none have been satisfied AND it hasn't been manually unlocked
+function isLocked(task){
+  if(!task.prereqIds || task.prereqIds.length === 0) return false;
+  if(unlockedIds[task.id]) return false;
+  // locked if ANY prereq is incomplete
+  return task.prereqIds.some(pid => {
+    const pt = TASKS.find(t=>t.id===pid);
+    return pt && !isCardComplete(pt);
+  });
+}
+
+function manualUnlock(taskId, e){
+  e.stopPropagation();
+  unlockedIds[taskId] = true;
+  saveState();
+  if(currentView==='graph') renderGraph();
+  else renderCards();
+}
+
+function toggleHideLocked(btn){
+  hideLocked = !hideLocked;
+  btn.classList.toggle('active', hideLocked);
+  btn.textContent = hideLocked ? '🔒 Show Locked' : '🔒 Hide Locked';
+  try{localStorage.setItem('osrs_hidelocked',JSON.stringify(hideLocked));}catch(e){}
+  renderCards();
 }
 
 function isCardComplete(task){
@@ -912,6 +978,7 @@ function toggleMain(taskId, e){
   const allDone = isCardComplete(task);
   task.subtasks.forEach(st=>{state[st.id] = !allDone});
   saveState();
+  // check if completing this task unlocks any others
   renderCards();
   updateProgress();
 }
@@ -925,7 +992,10 @@ function toggleSub(subId, taskId, e){
     refreshPanelSubtask(subId, task);
     refreshGraphNode(task);
   } else {
+    // if this subtask completion finishes the task, re-render to unlock dependents
+    const wasComplete = isCardComplete(task);
     refreshCard(task);
+    if(wasComplete !== isCardComplete(task)) renderCards();
   }
   updateProgress();
 }
@@ -962,7 +1032,7 @@ function refreshGraphNode(task){
   const rects = node.querySelectorAll('rect');
   // progress fill is the last rect (4th)
   if(rects.length >= 4){
-    const NODE_W = 170;
+    const NODE_W = 190;
     const pbW = NODE_W - 20;
     rects[3].setAttribute('width', total ? ((done/total)*pbW).toString() : '0');
     rects[3].setAttribute('fill', complete?'#4a8c3f':'#c8a84b');
@@ -1059,12 +1129,34 @@ function updateProgress(){
 
 function buildCard(task){
   const complete = isCardComplete(task);
+  const locked = isLocked(task);
   const {done,total} = getSubProgress(task);
   const prereqs = task.prereqIds.map(pid=>TASKS.find(t=>t.id===pid)).filter(Boolean);
 
   const card = document.createElement('div');
-  card.className = `task-card priority-${task.priority}${complete?' completed-card':''}`;
+  card.className = `task-card priority-${task.priority}${complete?' completed-card':''}${locked?' locked':''}`;
   card.id = 'card_'+task.id;
+
+  if(locked){
+    // Locked card: show blurred shell + unlock overlay
+    const incompletePrereqs = prereqs.filter(pt=>!isCardComplete(pt)).map(pt=>pt.title);
+    card.innerHTML = `
+      <div class="card-priority-bar"></div>
+      <div class="card-header" style="cursor:default">
+        <div class="card-title-area">
+          <div class="card-title">${task.title}</div>
+          <div style="margin-top:4px">
+            <span class="priority-badge ${task.priority}">${PRIORITY_LABEL[task.priority]}</span>
+          </div>
+        </div>
+      </div>
+      <div class="locked-overlay">
+        <div class="locked-prereqs">🔒 Complete first: ${incompletePrereqs.join(', ')}</div>
+        <button class="unlock-btn" onclick="manualUnlock('${task.id}',event)">Reveal Anyway</button>
+      </div>
+    `;
+    return card;
+  }
 
   const subtasksHtml = task.subtasks.map(st=>{
     const d = !!state[st.id];
@@ -1121,7 +1213,14 @@ function buildCard(task){
 function renderCards(){
   const container = document.getElementById('cards-container');
   container.innerHTML='';
+  // restore hide-locked button state
+  const hlBtn = document.getElementById('hide-locked-btn');
+  if(hlBtn){
+    hlBtn.classList.toggle('active', hideLocked);
+    hlBtn.textContent = hideLocked ? '🔒 Show Locked' : '🔒 Hide Locked';
+  }
   const filtered = TASKS.filter(t=>{
+    if(hideLocked && isLocked(t)) return false;
     if(currentFilter==='must') return t.priority==='must';
     if(currentFilter==='should') return t.priority==='should';
     if(currentFilter==='nice') return t.priority==='nice';
@@ -1173,7 +1272,7 @@ function renderGraph(){
   svg.appendChild(bg);
 
   const layers = computeLayers();
-  const NODE_W = 180, NODE_H = 72, HGAP = 80, VGAP = 40;
+  const NODE_W = 190, NODE_H = 76, HGAP = 120, VGAP = 60;
   const positions = {};
 
   layers.forEach((layer, li)=>{
@@ -1216,22 +1315,22 @@ function renderGraph(){
     const pcolor = PRIORITY_COLOR[task.priority];
     const isSkill = !!task.isSkillNode;
 
+    const locked = isLocked(task);
+
     const g = document.createElementNS('http://www.w3.org/2000/svg','g');
     g.classList.add('g-node');
     if(complete) g.classList.add('completed');
+    if(locked) g.classList.add('g-locked');
     g.setAttribute('transform',`translate(${pos.x},${pos.y})`);
     g.dataset.id=task.id;
 
     const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
     rect.setAttribute('width',NODE_W);rect.setAttribute('height',NODE_H);
     rect.setAttribute('rx','4');
-    // Skill nodes get a blue-tinted bg to visually distinguish
-    rect.setAttribute('fill', complete?(isSkill?'#1a2a30':'#1a2a18'):(isSkill?'#161e28':'#2a2010'));
-    rect.setAttribute('stroke', complete?(isSkill?'#3a6a9b':'#4a8c3f'):(isSkill?'#2a4a6a':'#5a4a2e'));
+    rect.setAttribute('fill', locked?'#1a1810':complete?(isSkill?'#1a2a30':'#1a2a18'):(isSkill?'#161e28':'#2a2010'));
+    rect.setAttribute('stroke', locked?'#3a3020':complete?(isSkill?'#3a6a9b':'#4a8c3f'):(isSkill?'#2a4a6a':'#5a4a2e'));
     rect.setAttribute('stroke-width', isSkill?'1.5':'1');
-    if(isSkill){
-      rect.setAttribute('stroke-dasharray','4,2');
-    }
+    if(isSkill && !locked){ rect.setAttribute('stroke-dasharray','4,2'); }
     g.appendChild(rect);
 
     // Priority/type bar at top
@@ -1262,13 +1361,22 @@ function renderGraph(){
       const t = document.createElementNS('http://www.w3.org/2000/svg','text');
       t.setAttribute('x','10');
       t.setAttribute('y', (20 + li*14).toString());
-      t.setAttribute('fill', complete?(isSkill?'#5a8abf':'#6abf5e'):(isSkill?'#5a8abf':'#c8a84b'));
+      t.setAttribute('fill', locked?'#4a3a20':complete?(isSkill?'#5a8abf':'#6abf5e'):(isSkill?'#5a8abf':'#c8a84b'));
       t.setAttribute('font-family',"'Cinzel',serif");
       t.setAttribute('font-size','12');
       t.setAttribute('font-weight','600');
       t.textContent = line;
       g.appendChild(t);
     });
+
+    // Lock icon for locked nodes
+    if(locked){
+      const lockTxt = document.createElementNS('http://www.w3.org/2000/svg','text');
+      lockTxt.setAttribute('x',(NODE_W-14).toString());lockTxt.setAttribute('y','18');
+      lockTxt.setAttribute('fill','#4a3a20');lockTxt.setAttribute('font-size','13');
+      lockTxt.textContent='🔒';
+      g.appendChild(lockTxt);
+    }
 
     // Progress bar
     const pbW = NODE_W - 20, pbY = NODE_H - 16;
@@ -1290,9 +1398,9 @@ function renderGraph(){
     // Progress label
     const plbl = document.createElementNS('http://www.w3.org/2000/svg','text');
     plbl.setAttribute('x','10');plbl.setAttribute('y',(pbY-3).toString());
-    plbl.setAttribute('fill','#6b5535');plbl.setAttribute('font-size','10');
+    plbl.setAttribute('fill', locked?'#3a2a10':'#6b5535');plbl.setAttribute('font-size','10');
     plbl.setAttribute('font-family',"'Crimson Pro',serif");
-    plbl.textContent = `${done}/${total} · ${PRIORITY_LABEL[task.priority]}`;
+    plbl.textContent = locked ? `Locked · ${PRIORITY_LABEL[task.priority]}` : `${done}/${total} · ${PRIORITY_LABEL[task.priority]}`;
     g.appendChild(plbl);
 
     g.addEventListener('click',()=>openPanel(task.id));
@@ -1358,59 +1466,80 @@ function highlightEdges(taskId, on){
 function openPanel(taskId){
   const task = TASKS.find(t=>t.id===taskId);
   if(!task) return;
+  const locked = isLocked(task);
   const complete = isCardComplete(task);
   const {done,total} = getSubProgress(task);
   const prereqs = task.prereqIds.map(pid=>TASKS.find(t=>t.id===pid)).filter(Boolean);
   const dependents = TASKS.filter(t=>t.prereqIds.includes(taskId));
 
   const content = document.getElementById('panel-content');
-  content.innerHTML = `
-    <div class="panel-title">${task.title}</div>
-    <div class="panel-badge">
-      <span class="priority-badge ${task.priority}" style="display:inline-flex">${PRIORITY_LABEL[task.priority]}</span>
-      ${complete?'<span class="priority-badge must" style="display:inline-flex;margin-left:6px">✓ Complete</span>':''}
-    </div>
-    <p class="panel-desc">${task.description}</p>
 
-    ${task.wikiUrl?`<div class="panel-section"><a href="${task.wikiUrl}" target="_blank" class="subtask-link">📖 View on OSRS Wiki ↗</a></div>`:''}
+  if(locked){
+    const incompletePrereqs = prereqs.filter(pt=>!isCardComplete(pt));
+    content.innerHTML = `
+      <div class="panel-title" style="color:var(--text-dim)">${task.title}</div>
+      <div class="panel-badge">
+        <span class="priority-badge ${task.priority}" style="display:inline-flex">${PRIORITY_LABEL[task.priority]}</span>
+      </div>
+      <div style="margin:20px 0;text-align:center">
+        <div style="font-size:32px;margin-bottom:12px">🔒</div>
+        <p style="color:var(--text-muted);font-style:italic;font-size:14px;margin-bottom:16px">Complete these first:</p>
+        <div class="prereqs-list" style="justify-content:center">
+          ${incompletePrereqs.map(pt=>`<div class="prereq-chip" onclick="openPanel('${pt.id}')">${pt.title}</div>`).join('')}
+        </div>
+      </div>
+      <button class="unlock-btn" style="display:block;margin:0 auto" onclick="manualUnlock('${task.id}',event);openPanel('${task.id}')">Reveal Anyway</button>
+    `;
+  } else {
+    content.innerHTML = `
+      <div class="panel-title">${task.title}</div>
+      <div class="panel-badge">
+        <span class="priority-badge ${task.priority}" style="display:inline-flex">${PRIORITY_LABEL[task.priority]}</span>
+        ${complete?'<span class="priority-badge must" style="display:inline-flex;margin-left:6px">✓ Complete</span>':''}
+      </div>
+      <p class="panel-desc">${task.description}</p>
 
-    <div class="panel-section">
-      <div class="panel-section-title">Progress — ${done}/${total}</div>
-      <div class="sub-prog-bar" style="margin-bottom:10px"><div class="sub-prog-fill" style="width:${total?done/total*100:0}%"></div></div>
-      <ul class="subtasks">
-        ${task.subtasks.map(st=>{
-          const d = !!state[st.id];
-          return `<li class="subtask-item">
-            <div class="subtask-check${d?' checked':''}" onclick="toggleSub('${st.id}','${task.id}',event)"></div>
-            <span class="subtask-text${d?' done':''}">${st.text}</span>
-          </li>`;
-        }).join('')}
-      </ul>
-    </div>
+      ${task.wikiUrl?`<div class="panel-section"><a href="${task.wikiUrl}" target="_blank" class="subtask-link">📖 View on OSRS Wiki ↗</a></div>`:''}
 
-    ${prereqs.length?`
       <div class="panel-section">
-        <div class="panel-section-title">Recommended First</div>
-        <div class="prereqs-list">
-          ${prereqs.map(pt=>{
-            const pc = isCardComplete(pt);
-            return `<div class="prereq-chip${pc?' satisfied':''}" onclick="closePanel();scrollToTask('${pt.id}')">${pt.title}</div>`;
+        <div class="panel-section-title">Progress — ${done}/${total}</div>
+        <div class="sub-prog-bar" style="margin-bottom:10px"><div class="sub-prog-fill" style="width:${total?done/total*100:0}%"></div></div>
+        <ul class="subtasks">
+          ${task.subtasks.map(st=>{
+            const d = !!state[st.id];
+            return `<li class="subtask-item">
+              <div class="subtask-check${d?' checked':''}" onclick="toggleSub('${st.id}','${task.id}',event)"></div>
+              <span class="subtask-text${d?' done':''}">${st.text}</span>
+            </li>`;
           }).join('')}
-        </div>
-      </div>` : ''}
+        </ul>
+      </div>
 
-    ${dependents.length?`
-      <div class="panel-section">
-        <div class="panel-section-title">Unlocks</div>
-        <div class="prereqs-list">
-          ${dependents.map(dt=>`<div class="prereq-chip" onclick="openPanel('${dt.id}')">${dt.title}</div>`).join('')}
-        </div>
-      </div>` : ''}
-  `;
+      ${prereqs.length?`
+        <div class="panel-section">
+          <div class="panel-section-title">Recommended First</div>
+          <div class="prereqs-list">
+            ${prereqs.map(pt=>{
+              const pc = isCardComplete(pt);
+              return `<div class="prereq-chip${pc?' satisfied':''}" onclick="closePanel();scrollToTask('${pt.id}')">${pt.title}</div>`;
+            }).join('')}
+          </div>
+        </div>` : ''}
+
+      ${dependents.length?`
+        <div class="panel-section">
+          <div class="panel-section-title">Unlocks</div>
+          <div class="prereqs-list">
+            ${dependents.map(dt=>{
+              const dtLocked = isLocked(dt);
+              return `<div class="prereq-chip${dtLocked?'':' satisfied'}" onclick="openPanel('${dt.id}')">${dtLocked?'🔒 ':''}${dt.title}</div>`;
+            }).join('')}
+          </div>
+        </div>` : ''}
+    `;
+  }
 
   document.getElementById('detail-panel').classList.add('open');
-
-  // Highlight node
   document.querySelectorAll('.g-node').forEach(n=>n.classList.remove('selected'));
   const node = document.querySelector(`.g-node[data-id="${taskId}"]`);
   if(node) node.classList.add('selected');
