@@ -916,7 +916,7 @@ function loadState(){
     if(s) state = JSON.parse(s);
     const u = localStorage.getItem('osrs_unlocked_v2');
     if(u) unlockedIds = JSON.parse(u);
-    const h = localStorage.getItem('osrs_hidelocked');
+    const h = localStorage.getItem('osrs_hidelocked_v2');
     if(h) hideLocked = JSON.parse(h);
   }catch(e){state={};unlockedIds={}}
 }
@@ -951,7 +951,7 @@ function toggleHideLocked(btn){
   hideLocked = !hideLocked;
   btn.classList.toggle('active', hideLocked);
   btn.textContent = hideLocked ? '🔒 Hide Locked' : '👁 Show Locked';
-  try{localStorage.setItem('osrs_hidelocked',JSON.stringify(hideLocked));}catch(e){}
+  try{localStorage.setItem('osrs_hidelocked_v2',JSON.stringify(hideLocked));}catch(e){}
   renderCards();
   if(currentView==='graph') renderGraph();
 }
