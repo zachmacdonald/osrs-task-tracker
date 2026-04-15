@@ -247,8 +247,9 @@ header .spacer{flex:1}
 .g-node text{fill:var(--text-muted);font-family:'Crimson Pro',serif;font-size:12px;pointer-events:none}
 .g-node .g-title{fill:var(--gold);font-size:13px;font-family:'Cinzel',serif}
 .g-node .g-priority{font-size:10px}
-.g-node.g-locked rect{opacity:.5}
-.g-node.g-locked:hover rect{stroke:#6b5535;fill:#1e1810}
+.g-node.g-locked{filter:blur(2px);opacity:.3;pointer-events:none}
+.g-node.g-hidden-locked rect{opacity:.5}
+.g-node.g-hidden-locked:hover rect{stroke:#6b5535;fill:#1e1810}
 .g-edge{stroke:rgba(90,74,46,0.5);stroke-width:1.5;fill:none;marker-end:url(#arrow)}
 .g-edge.highlighted{stroke:var(--gold-dark);stroke-width:2}
 
@@ -332,7 +333,7 @@ header .spacer{flex:1}
   <button class="filter-btn" onclick="setFilter('nice',this)">🟠 Optional</button>
   <button class="filter-btn" onclick="setFilter('incomplete',this)">Incomplete</button>
   <button class="filter-btn" onclick="setFilter('complete',this)">Complete</button>
-  <button class="hide-locked-btn" id="hide-locked-btn" onclick="toggleHideLocked(this)">🔒 Hide Locked</button>
+  <button class="hide-locked-btn active" id="hide-locked-btn" onclick="toggleHideLocked(this)">👁 Show Locked</button>
 </div>
 
 <div class="divider">— Tasks —</div>
@@ -907,7 +908,7 @@ let state = {};
 let unlockedIds = {}; // manually unlocked task ids
 let currentFilter = 'all';
 let currentView = 'cards';
-let hideLocked = false;
+let hideLocked = true;
 
 function loadState(){
   try{
@@ -949,9 +950,10 @@ function manualUnlock(taskId, e){
 function toggleHideLocked(btn){
   hideLocked = !hideLocked;
   btn.classList.toggle('active', hideLocked);
-  btn.textContent = hideLocked ? '🔒 Show Locked' : '🔒 Hide Locked';
+  btn.textContent = hideLocked ? '🔒 Hide Locked' : '👁 Show Locked';
   try{localStorage.setItem('osrs_hidelocked',JSON.stringify(hideLocked));}catch(e){}
   renderCards();
+  if(currentView==='graph') renderGraph();
 }
 
 function isCardComplete(task){
@@ -1217,7 +1219,7 @@ function renderCards(){
   const hlBtn = document.getElementById('hide-locked-btn');
   if(hlBtn){
     hlBtn.classList.toggle('active', hideLocked);
-    hlBtn.textContent = hideLocked ? '🔒 Show Locked' : '🔒 Hide Locked';
+    hlBtn.textContent = hideLocked ? '🔒 Hide Locked' : '👁 Show Locked';
   }
   const filtered = TASKS.filter(t=>{
     if(hideLocked && isLocked(t)) return false;
@@ -1320,7 +1322,6 @@ function renderGraph(){
     const g = document.createElementNS('http://www.w3.org/2000/svg','g');
     g.classList.add('g-node');
     if(complete) g.classList.add('completed');
-    if(locked) g.classList.add('g-locked');
     g.setAttribute('transform',`translate(${pos.x},${pos.y})`);
     g.dataset.id=task.id;
 
@@ -1403,7 +1404,9 @@ function renderGraph(){
     plbl.textContent = locked ? `Locked · ${PRIORITY_LABEL[task.priority]}` : `${done}/${total} · ${PRIORITY_LABEL[task.priority]}`;
     g.appendChild(plbl);
 
-    g.addEventListener('click',()=>openPanel(task.id));
+    if(locked) g.classList.add(hideLocked ? 'g-hidden-locked' : 'g-locked');
+
+    g.addEventListener('click',()=>{ if(!hideLocked || !locked) openPanel(task.id); });
     g.addEventListener('mouseenter',()=>highlightEdges(task.id, true));
     g.addEventListener('mouseleave',()=>highlightEdges(task.id, false));
 
