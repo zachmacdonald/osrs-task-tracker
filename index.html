@@ -980,8 +980,12 @@ function toggleMain(taskId, e){
   const allDone = isCardComplete(task);
   task.subtasks.forEach(st=>{state[st.id] = !allDone});
   saveState();
-  // check if completing this task unlocks any others
-  renderCards();
+  if(currentView==='graph'){
+    refreshGraphNode(task);
+    openPanel(taskId); // re-render panel to reflect new state
+  } else {
+    renderCards();
+  }
   updateProgress();
 }
 
@@ -1505,7 +1509,10 @@ function openPanel(taskId){
       ${task.wikiUrl?`<div class="panel-section"><a href="${task.wikiUrl}" target="_blank" class="subtask-link">📖 View on OSRS Wiki ↗</a></div>`:''}
 
       <div class="panel-section">
-        <div class="panel-section-title">Progress — ${done}/${total}</div>
+        <div class="panel-section-title" style="display:flex;align-items:center;justify-content:space-between">
+          Progress — ${done}/${total}
+          <div class="card-check${complete?' checked':''}" onclick="toggleMain('${task.id}',event)" title="Toggle all subtasks" style="flex-shrink:0"></div>
+        </div>
         <div class="sub-prog-bar" style="margin-bottom:10px"><div class="sub-prog-fill" style="width:${total?done/total*100:0}%"></div></div>
         <ul class="subtasks">
           ${task.subtasks.map(st=>{
