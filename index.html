@@ -369,22 +369,7 @@ const TASKS = [
       {id:'cb_75',text:'Reach 75 Combat to unlock Konar quo Maten as your Slayer master'},
     ]
   },
-  {
-    id:'skill_slayer',
-    title:'Slayer to 48',
-    priority:'must',
-    prereqIds:['skill_combat'],
-    isSkillNode:true,
-    description:'48 Slayer is the minimum requirement to access Moons of Peril. Konar should already be unlocked well before this point. Use the Turael 9-task method to rack up points fast while training.',
-    wikiUrl:'https://oldschool.runescape.wiki/w/Ironman_Guide/Slayer',
-    subtasks:[
-      {id:'sl_konar',text:'Konar is already unlocked — use her as your main master for Brimstone Keys and bonus Slayer points'},
-      {id:'sl_tureal',text:'Turael skip method: do 9 tasks with Turael in Burthorpe (fast tasks, light gear), then your 10th with Konar for the streak bonus points'},
-      {id:'sl_melee',text:'Use melee + Proselyte armour for longer tasks; safespot with magic for hellhounds, greater demons, and dragons'},
-      {id:'sl_points',text:'Slayer points priority: first build a good block list (block bad tasks via Turael), unlock superior slayer monsters, then work toward the Slayer Helmet — that\'s what the points are for'},
-      {id:'sl_48',text:'Reach 48 Slayer — this is the hard requirement to unlock Moons of Peril'},
-    ]
-  },
+
   {
     id:'skill_herblore',
     title:'Herblore to 38–55',
@@ -474,24 +459,38 @@ const TASKS = [
     ]
   },
   {
-    id:'skill_mining',
-    title:'Mining Training',
+    id:'skill_mining_early',
+    title:'Early Mining (to ~30)',
     priority:'should',
     prereqIds:[],
     isSkillNode:true,
-    description:'52 Mining is required for Legends\' Quest (boostable from 50). Train naturally through quest rewards and iron ore — don\'t go out of your way for this one, it comes on its own.',
+    description:'Early Mining covers the levels you\'ll naturally pick up through quests and a bit of Motherlode Mine. No need to grind this — quests alone get you most of the way to 30.',
     wikiUrl:'https://oldschool.runescape.wiki/w/Mining_training',
     subtasks:[
       {id:'mine_quests',text:'Free XP first: Plague City, Doric\'s Quest, and The Lost Tribe all give Mining XP — do these before touching a pickaxe'},
-      {id:'mine_pickaxe',text:'Pickaxe upgrades: Steel (6) → Mithril (21, buy from Dwarven Mine shop under Falador) → Rune (obtained from completing Between a Rock... quest — much better than grinding to 41)'},
-      {id:'mine_mlm',text:'Motherlode Mine (30 Mining): great AFK training method. Rewards include the Gem Bag and Coal Bag (very useful) and the Prospector outfit (Mining XP bonus + Falador Diary requirement for the helmet)'},
-      {id:'mine_mlm_upstairs',text:'If spending a lot of time in Motherlode Mine, unlock the upper floor (requires 72 Mining) and the upper hopper for faster ore collection — worth it for longer sessions'},
-      {id:'mine_52',text:'Reach 52 Mining for Legends\' Quest — boostable with a Mining Potion (+2) from 50. You\'ll likely hit this naturally through quests + Motherlode Mine'},
+      {id:'mine_pickaxe',text:'Pickaxe upgrades: Steel (6) → Mithril (21, buy from Dwarven Mine shop under Falador) → Rune at 41 (get it from Between a Rock... quest reward rather than buying — saves a lot of GP)'},
+      {id:'mine_mlm',text:'Motherlode Mine (30 Mining): great AFK training method. Rewards include the Gem Bag and Coal Bag (very useful) and the Prospector outfit (Mining XP bonus)'},
+      {id:'mine_30',text:'Reach ~30 Mining — you\'ll likely hit this naturally through quests alone. Enough for Runecrafting prerequisites and early quest requirements'},
+    ]
+  },
+  {
+    id:'skill_mining_52',
+    title:'Mining to 52 (Legends\' Req)',
+    priority:'should',
+    prereqIds:['skill_mining_early'],
+    isSkillNode:true,
+    description:'52 Mining is required for Legends\' Quest (boostable from 50 with a Mining Potion). You\'ll get here naturally through Motherlode Mine over time — no need to rush it.',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Mining_training',
+    subtasks:[
+      {id:'mine_mlm_52',text:'Continue Motherlode Mine from 30 toward 52 — AFK-friendly and the Coal Bag + Gem Bag rewards make it worth the time'},
+      {id:'mine_mlm_upstairs',text:'Optional: unlock the upper Motherlode Mine floor (requires 72 Mining) for faster ore collection if spending a lot of time here'},
+      {id:'mine_52',text:'Reach 52 Mining for Legends\' Quest — boostable with a Mining Potion (+2) from 50. You\'ll likely hit this naturally through Motherlode Mine sessions'},
     ]
   },
   {
     id:'skill_smithing',
     title:'Smithing to 55+',
+    priority:'should',
     prereqIds:[],
     isSkillNode:true,
     description:'55 Smithing is required for the Defender of Varrock quest (Zombie Axe chain). The Giant\'s Foundry minigame is the recommended ironman method — it\'s profitable and engaging.',
@@ -507,13 +506,13 @@ const TASKS = [
     id:'skill_hunter',
     title:'Hunter to 52',
     priority:'must',
-    prereqIds:['bone_voyage'],
+    prereqIds:[],
     isSkillNode:true,
-    description:'52 Hunter is required for the Defender of Varrock quest. Birdhouse runs are the most efficient passive method. Hunter Rumours are excellent active XP from 46 onward.',
+    description:'52 Hunter is required for the Defender of Varrock quest. You can reach 52 entirely without Fossil Island — Falconry and Hunter Rumours are the fastest methods. Birdhouse runs on Fossil Island (via Bone Voyage) are a great passive supplement but not required.',
     wikiUrl:'https://oldschool.runescape.wiki/w/Ironman_Guide/Hunter',
     subtasks:[
-      {id:'hunt_birdhouse',text:'Set up birdhouse runs on Fossil Island ASAP (requires Bone Voyage). Do a run every ~50 minutes for passive Hunter XP and tree seeds — magic log birdhouses average 9 nests per run'},
       {id:'hunt_early',text:'Early levels (1–9): catch Copper Longtails in Piscatoris. (9–15): Ruby Harvests in Piscatoris. (15–29): Swamp Lizards. (29–43): Falconry at Piscatoris Falconry Area (fastest to 43)'},
+      {id:'hunt_birdhouse',text:'Optional but recommended: set up birdhouse runs on Fossil Island (requires Bone Voyage) for passive Hunter XP and tree seeds every ~50 minutes'},
       {id:'hunt_rumors',text:'From 46: do Hunter Rumours from Varrock (Huntmaster Cervantes) — best active XP method per hour and very engaging content'},
       {id:'hunt_52',text:'Reach 52 Hunter — required for Defender of Varrock quest'},
     ]
@@ -522,7 +521,7 @@ const TASKS = [
   {
     id:'bone_voyage',
     title:'Bone Voyage Quest',
-    priority:'must',
+    priority:'should',
     prereqIds:[],
     description:'Unlocks Fossil Island — required for birdhouse runs (passive Hunter XP + tree seeds) and the Volcanic Mine. Short quest, big payoff. Requires completion of The Dig Site first.',
     wikiUrl:'https://oldschool.runescape.wiki/w/Bone_Voyage',
@@ -553,7 +552,7 @@ const TASKS = [
   {
     id:'dks',
     title:'Dagannoth Kings',
-    priority:'must',
+    priority:'should',
     prereqIds:[],
     description:'Three kings, each weak to a different combat style. Can duo or trio with clan. Main target is the Berserker Ring from Rex — one of the best melee rings for a long time. Requires completing The Fremennik Trials and Horror from the Deep.',
     wikiUrl:'https://oldschool.runescape.wiki/w/Dagannoth_Kings',
@@ -570,19 +569,21 @@ const TASKS = [
     id:'slayer48',
     title:'Slayer to 48 (Moons Req)',
     priority:'must',
-    prereqIds:['skill_slayer'],
-    description:'48 Slayer is the hard minimum requirement for Moons of Peril. Konar is already unlocked before this point — use the Turael skip method to stack bonus Slayer points efficiently.',
-    wikiUrl:'https://oldschool.runescape.wiki/w/Moons_of_Peril',
+    prereqIds:['skill_combat'],
+    description:'48 Slayer is the hard minimum requirement for Moons of Peril. Use Konar as your main master for Brimstone Keys and bonus points. The Turael 9-task skip method stacks bonus points efficiently.',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Ironman_Guide/Slayer',
     subtasks:[
-      {id:'sl48_konar',text:'Use Konar as your main master — her Brimstone Keys have excellent loot and she gives more points than most masters'},
-      {id:'sl48_skip',text:'Turael skip method: do 9 tasks with Turael (Burthorpe, super fast tasks), then take your 10th with Konar for the streak bonus points'},
+      {id:'sl48_konar',text:'Use Konar as your main master — her Brimstone Keys have excellent loot and she gives more points than most masters. Unlocked at 75 Combat'},
+      {id:'sl48_skip',text:'Turael skip method: do 9 tasks with Turael in Burthorpe (fast tasks, light gear), then take your 10th with Konar for the streak bonus points'},
+      {id:'sl48_melee',text:'Use melee + Proselyte armour for longer tasks; safespot with magic for hellhounds, greater demons, and dragons'},
+      {id:'sl48_points',text:'Slayer points priority: build a good block list first, then unlock superior slayer monsters, then work toward the Slayer Helmet'},
       {id:'sl48_done',text:'Reach 48 Slayer — this unlocks access to fight the Moons of Peril'},
     ]
   },
   {
     id:'rfd',
     title:'Recipe for Disaster',
-    priority:'must',
+    priority:'should',
     prereqIds:['legends'],
     description:"Long-term goal for Barrows Gloves — best-in-slot gloves for most combat styles for a very long time. Requires completing many sub-quests and fighting the Culinaromancer.",
     wikiUrl:'https://oldschool.runescape.wiki/w/Recipe_for_Disaster',
@@ -612,8 +613,8 @@ const TASKS = [
     id:'capes',
     title:'Fire Cape (Fight Caves)',
     priority:'must',
-    prereqIds:['ancientmagicks'],
-    description:"One of the most important milestones. The Fire Cape is best-in-slot melee cape for a long time. 63 waves ending with TzTok-Jad. Blood spells from Ancient Magicks help significantly.",
+    prereqIds:['prayer43'],
+    description:"One of the most important milestones. The Fire Cape is best-in-slot melee cape for a long time. 63 waves ending with TzTok-Jad. Protection prayers are essential — Ancient Magicks helps significantly but is not required.",
     wikiUrl:'https://oldschool.runescape.wiki/w/Fight_Cave',
     subtasks:[
       {id:'cape_ranged',text:'Recommended: at least 66 Ranged. 70 Ranged unlocks Karil\'s crossbow + armour — a big upgrade for this fight'},
@@ -719,7 +720,7 @@ const TASKS = [
     id:'legends',
     title:"Legend's Quest",
     priority:'must',
-    prereqIds:['skill_herblore','skill_agility','skill_crafting','skill_mining'],
+    prereqIds:['skill_herblore','skill_agility','skill_crafting','skill_mining_52'],
     description:"One of the most impactful quests in OSRS. Required for RFD (Awowogei subquest) and gives one of the game's biggest Herblore XP rewards. Also opens up the Legends Guild.",
     wikiUrl:'https://oldschool.runescape.wiki/w/Legends%27_Quest',
     subtasks:[
@@ -778,8 +779,8 @@ const TASKS = [
     id:'melee_path',
     title:'Melee Quest Path',
     priority:'must',
-    prereqIds:['prayer43','skill_agility'],
-    description:'A series of quests that give massive free Attack, Strength and Defence XP — skipping huge amounts of grinding. These also unlock key gear and areas.',
+    prereqIds:['prayer43'],
+    description:'A series of quests that give massive free Attack, Strength and Defence XP — skipping huge amounts of grinding. The Grand Tree requires 25 Agility, but most quests here have no Agility gate. These also unlock key gear and areas.',
     wikiUrl:'https://oldschool.runescape.wiki/w/Optimal_quest_guide',
     subtasks:[
       {id:'melee_tourist',text:'Tourist Trap — great way to get Agility levels instead of doing courses. Just need 10 Fletching (make headless arrows) and the smithing part is covered by Doric\'s Quest. Rewards two lamps you put into Agility'},
@@ -794,19 +795,32 @@ const TASKS = [
   },
   {
     id:'mage_path',
-    title:'Magic / Runecrafting Path',
+    title:'Magic Quest Path',
     priority:'must',
-    prereqIds:['skill_mining'],
-    description:'A quest-driven path to unlock Runecrafting and get a steady supply of runes via Guardians of the Rift. Self-sufficiency in runes is huge for bossing and skilling.',
+    prereqIds:[],
+    description:'A quest-driven path to unlock Magic and get your levels up for combat and questing. Rune Mysteries is the key starting point. Magic levels come naturally through combat training and quests.',
+    wikiUrl:'https://oldschool.runescape.wiki/w/Magic_training',
+    subtasks:[
+      {id:'mage_mysteries',text:'Complete Rune Mysteries — unlocks Runecrafting and the ability to craft runes. Short quest, big unlock'},
+      {id:'mage_combat_magic',text:'Train Magic through combat — safespotting with Fire Bolt or Water Bolt on monsters gives solid XP and useful drops. Blue dragons east of Tal Teklan are great for 60 Magic'},
+      {id:'mage_60',text:'Reach 60 Magic — unlocks the God Cape from Mage Arena I (best-in-slot magic cape, free) and most useful combat spells'},
+      {id:'mage_70',text:'Reach 70 Magic — unlocks Ice Burst and other strong Ancient Magick spells, significant PvM upgrade'},
+    ]
+  },
+  {
+    id:'skill_runecrafting',
+    title:'Runecrafting (Guardians of the Rift)',
+    priority:'should',
+    prereqIds:['mage_path'],
+    isSkillNode:true,
+    description:'Self-sufficiency in runes is a great ironman goal. Guardians of the Rift is the main training method — gives runes, Abyssal Pearls for useful rewards, and steady RC XP. Not required for any core goal but very useful long-term.',
     wikiUrl:'https://oldschool.runescape.wiki/w/Guardians_of_the_Rift',
     subtasks:[
-      {id:'mage_mysteries',text:'Complete Rune Mysteries — unlocks Runecrafting and is required for the rest of this chain'},
-      {id:'mage_abyss',text:'Enter the Abyss (talk to the Mage of Zamorak north of Edgeville) — bank everything before entering the Wilderness for this step, as you get pk\'d by the NPC'},
-      {id:'mage_essence',text:'Mine some Rune Essence and craft runes to reach level 10 Runecrafting — shouldn\'t take long from where quests leave you'},
-      {id:'mage_eye',text:'Complete Temple of the Eye — unlocks the Guardians of the Rift minigame, the main way to train Runecrafting'},
-      {id:'mage_mining',text:'Get Mining XP toward the minigame reqs — Plague City, Doric\'s Quest, and The Lost Tribe give free Mining XP (or just mine, not your dad)'},
-      {id:'mage_pickaxe',text:'Try to reach 21 Mining for a Mithril Pickaxe — buy one from the mining shop beneath Falador in the Dwarven Mine'},
-      {id:'mage_gotr',text:'Guardians of the Rift — the main Runecrafting training method. Gives runes, Abyssal Pearls (spend on the Abyssal Needle + Lantern), and steady RC XP without needing to run the Abyss'},
+      {id:'rc_abyss',text:'Enter the Abyss (talk to the Mage of Zamorak north of Edgeville) — bank everything before entering the Wilderness for this step, as you get attacked by the NPC'},
+      {id:'rc_essence',text:'Mine some Rune Essence and craft runes to reach level 10 Runecrafting — shouldn\'t take long from where quests leave you'},
+      {id:'rc_eye',text:'Complete Temple of the Eye — unlocks the Guardians of the Rift minigame, the main way to train Runecrafting'},
+      {id:'rc_pickaxe',text:'Try to reach 21 Mining for a Mithril Pickaxe before diving into GOTR — buy one from the mining shop beneath Falador in the Dwarven Mine'},
+      {id:'rc_gotr',text:'Guardians of the Rift — gives runes, Abyssal Pearls (spend on the Abyssal Needle + Lantern), and steady RC XP without needing to run the Abyss'},
     ]
   },
   {
@@ -850,7 +864,7 @@ const TASKS = [
     id:'magic_gear_prog',
     title:'Magic Gear Progression',
     priority:'must',
-    prereqIds:['mage_path','ancientmagicks'],
+    prereqIds:['mage_path'],
     description:'Build toward a strong magic setup. Mystic robes are the first major upgrade, then Infinity Boots from the Mage Training Arena. Ancient Magicks opens up the best offensive spells.',
     wikiUrl:'https://oldschool.runescape.wiki/w/Magic',
     subtasks:[
@@ -867,8 +881,8 @@ const TASKS = [
     id:'thieving_money',
     title:'Thieving & Money Making',
     priority:'should',
-    prereqIds:['skill_agility'],
-    description:'Thieving is your best early money maker as an ironman. Blackjacking in Pollnivneach generates solid GP with few requirements. Wealthy Citizens in Civitas illa Fortis is a great AFK alternative later on. Also the best way to get seeds for Herblore.',
+    prereqIds:[],
+    description:'Thieving is your best early money maker as an ironman. Blackjacking in Pollnivneach generates solid GP with few requirements. Wealthy Citizens in Civitas illa Fortis is a great AFK alternative later on. Rogues\' Den (50 Thieving + 50 Agility) doubles your coin pickpocket loot.',
     wikiUrl:'https://oldschool.runescape.wiki/w/Ironman_Guide/Thieving',
     subtasks:[
       {id:'thiev_stalls',text:'Start: steal from Hosidius fruit stalls (15% Hosidius favour needed) until 42.5 Thieving — good early food and XP'},
